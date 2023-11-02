@@ -29,7 +29,7 @@ import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.acl.AclPermissionType;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
@@ -67,7 +67,7 @@ public class StandardAuthorizerPropertyTest {
         @ForAll @ValidTopicChars String topic,
         @ForAll @Size(max = 10) Set<@ValidTopicChars String> randomSuffixes
     ) throws Exception {
-        Assume.that(Topic.isValid(topic));
+        Assume.that(TopicUtils.isValid(topic));
         StandardAuthorizer authorizer = buildAuthorizer();
 
         // Create one DENY rule which matches and zero or more ALLOW rules which may or
@@ -91,7 +91,7 @@ public class StandardAuthorizerPropertyTest {
         @ForAll @ValidTopicChars String topic,
         @ForAll @Size(max = 10) Set<@ValidTopicChars String> randomSuffixes
     ) throws Exception {
-        Assume.that(Topic.isValid(topic));
+        Assume.that(TopicUtils.isValid(topic));
         StandardAuthorizer authorizer = buildAuthorizer();
 
         // Create one DENY rule which matches and zero or more ALLOW rules which may or
@@ -115,7 +115,7 @@ public class StandardAuthorizerPropertyTest {
         @ForAll @ValidTopicChars String topic,
         @ForAll @Size(max = 10) Set<@ValidTopicChars String> randomSuffixes
     ) throws Exception {
-        Assume.that(Topic.isValid(topic));
+        Assume.that(TopicUtils.isValid(topic));
         StandardAuthorizer authorizer = buildAuthorizer();
 
         // Create one ALLOW rule which matches and zero or more DENY rules which do not
@@ -140,7 +140,7 @@ public class StandardAuthorizerPropertyTest {
         @ForAll @ValidTopicChars String topic,
         @ForAll @Size(max = 10) Set<@ValidTopicChars String> randomSuffixes
     ) throws Exception {
-        Assume.that(Topic.isValid(topic));
+        Assume.that(TopicUtils.isValid(topic));
         StandardAuthorizer authorizer = buildAuthorizer();
 
         // Create one ALLOW rule which matches and zero or more DENY rules which do not

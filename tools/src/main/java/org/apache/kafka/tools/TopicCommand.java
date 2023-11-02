@@ -45,7 +45,7 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.utils.Exit;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.server.common.AdminCommandFailedException;
@@ -224,7 +224,7 @@ public abstract class TopicCommand {
                 .collect(Collectors.toList());
         } else {
             return allTopics.stream()
-                .filter(topic -> !(Topic.isInternal(topic) && excludeInternalTopics))
+                .filter(topic -> !(TopicUtils.isInternal(topic) && excludeInternalTopics))
                 .collect(Collectors.toList());
         }
     }
@@ -439,7 +439,7 @@ public abstract class TopicCommand {
 
         public void createTopic(TopicCommandOptions opts) throws Exception {
             CommandTopicPartition topic = new CommandTopicPartition(opts);
-            if (Topic.hasCollisionChars(topic.name.get())) {
+            if (TopicUtils.hasCollisionChars(topic.name.get())) {
                 System.out.println("WARNING: Due to limitations in metric names, topics with a period ('.') or underscore ('_') could " +
                     "collide. To avoid issues it is best to use either, but not both.");
             }

@@ -44,7 +44,7 @@ import org.apache.kafka.common.errors.TopicAuthorizationException;
 import org.apache.kafka.common.errors.UnsupportedVersionException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.HeartbeatResponseData;
 import org.apache.kafka.common.message.JoinGroupRequestData;
 import org.apache.kafka.common.message.JoinGroupResponseData;
@@ -2235,17 +2235,17 @@ public abstract class ConsumerCoordinatorTest {
             subscriptions.subscribe(Pattern.compile(".*"), Optional.of(rebalanceListener));
             Node node = new Node(0, "localhost", 9999);
             MetadataResponse.PartitionMetadata partitionMetadata =
-                new MetadataResponse.PartitionMetadata(Errors.NONE, new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, 0),
+                new MetadataResponse.PartitionMetadata(Errors.NONE, new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, 0),
                         Optional.of(node.id()), Optional.empty(), singletonList(node.id()), singletonList(node.id()),
                         singletonList(node.id()));
             MetadataResponse.TopicMetadata topicMetadata = new MetadataResponse.TopicMetadata(Errors.NONE,
-                Topic.GROUP_METADATA_TOPIC_NAME, true, singletonList(partitionMetadata));
+                TopicUtils.GROUP_METADATA_TOPIC_NAME, true, singletonList(partitionMetadata));
 
             client.updateMetadata(RequestTestUtils.metadataResponse(singletonList(node), "clusterId", node.id(),
                 singletonList(topicMetadata)));
             coordinator.maybeUpdateSubscriptionMetadata();
 
-            assertEquals(includeInternalTopics, subscriptions.subscription().contains(Topic.GROUP_METADATA_TOPIC_NAME));
+            assertEquals(includeInternalTopics, subscriptions.subscription().contains(TopicUtils.GROUP_METADATA_TOPIC_NAME));
         }
     }
 
@@ -4116,7 +4116,7 @@ public abstract class ConsumerCoordinatorTest {
             }
 
             topicMetadata.add(new MetadataResponse.TopicMetadata(Errors.NONE, topic, Uuid.ZERO_UUID,
-                    Topic.isInternal(topic), partitionMetadata, MetadataResponse.AUTHORIZED_OPERATIONS_OMITTED));
+                    TopicUtils.isInternal(topic), partitionMetadata, MetadataResponse.AUTHORIZED_OPERATIONS_OMITTED));
         }
 
         return RequestTestUtils.metadataResponse(nodes, "kafka-cluster", 0, topicMetadata, ApiKeys.METADATA.latestVersion());

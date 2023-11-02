@@ -22,7 +22,7 @@ import kafka.coordinator.transaction.TransactionCoordinator
 import kafka.network.RequestChannel
 import kafka.server.QuotaFactory.QuotaManagers
 import org.apache.kafka.common.errors.ClusterAuthorizationException
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.network.Send
 import org.apache.kafka.common.requests.{AbstractRequest, AbstractResponse}
 import org.apache.kafka.common.utils.Time
@@ -40,16 +40,16 @@ object RequestHandlerHelper {
     // this callback is invoked under the replica state change lock to ensure proper order of
     // leadership changes
     updatedLeaders.foreach { partition =>
-      if (partition.topic == Topic.GROUP_METADATA_TOPIC_NAME)
+      if (partition.topic == TopicUtils.GROUP_METADATA_TOPIC_NAME)
         groupCoordinator.onElection(partition.partitionId, partition.getLeaderEpoch)
-      else if (partition.topic == Topic.TRANSACTION_STATE_TOPIC_NAME)
+      else if (partition.topic == TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
         txnCoordinator.onElection(partition.partitionId, partition.getLeaderEpoch)
     }
 
     updatedFollowers.foreach { partition =>
-      if (partition.topic == Topic.GROUP_METADATA_TOPIC_NAME)
+      if (partition.topic == TopicUtils.GROUP_METADATA_TOPIC_NAME)
         groupCoordinator.onResignation(partition.partitionId, OptionalInt.of(partition.getLeaderEpoch))
-      else if (partition.topic == Topic.TRANSACTION_STATE_TOPIC_NAME)
+      else if (partition.topic == TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
         txnCoordinator.onResignation(partition.partitionId, Some(partition.getLeaderEpoch))
     }
   }

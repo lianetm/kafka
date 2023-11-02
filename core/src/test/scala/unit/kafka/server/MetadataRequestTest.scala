@@ -21,7 +21,7 @@ import java.util.Optional
 import kafka.utils.{TestInfoUtils, TestUtils}
 import org.apache.kafka.common.Uuid
 import org.apache.kafka.common.errors.UnsupportedVersionException
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.protocol.Errors
 import org.apache.kafka.common.requests.{MetadataRequest, MetadataResponse}
 import org.apache.kafka.metadata.BrokerState
@@ -96,7 +96,7 @@ class MetadataRequestTest extends AbstractMetadataRequestTest {
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumName)
   @ValueSource(strings = Array("zk", "kraft"))
   def testIsInternal(quorum: String): Unit = {
-    val internalTopic = Topic.GROUP_METADATA_TOPIC_NAME
+    val internalTopic = TopicUtils.GROUP_METADATA_TOPIC_NAME
     val notInternalTopic = "notInternal"
     // create the topics
     createTopic(internalTopic, 3, 2)

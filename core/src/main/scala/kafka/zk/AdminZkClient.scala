@@ -26,7 +26,7 @@ import kafka.utils.Implicits._
 import org.apache.kafka.admin.{AdminUtils, BrokerMetadata}
 import org.apache.kafka.common.{TopicPartition, Uuid}
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.server.common.AdminOperationException
 import org.apache.kafka.storage.internals.log.LogConfig
 import org.apache.zookeeper.KeeperException.NodeExistsException
@@ -128,19 +128,19 @@ class AdminZkClient(zkClient: KafkaZkClient,
   def validateTopicCreate(topic: String,
                           partitionReplicaAssignment: Map[Int, Seq[Int]],
                           config: Properties): Unit = {
-    Topic.validate(topic)
+    TopicUtils.validate(topic)
     if (zkClient.isTopicMarkedForDeletion(topic)) {
       throw new TopicExistsException(s"Topic '$topic' is marked for deletion.")
     }
     if (zkClient.topicExists(topic))
       throw new TopicExistsException(s"Topic '$topic' already exists.")
-    else if (Topic.hasCollisionChars(topic)) {
+    else if (TopicUtils.hasCollisionChars(topic)) {
       val allTopics = zkClient.getAllTopicsInCluster()
       // check again in case the topic was created in the meantime, otherwise the
       // topic could potentially collide with itself
       if (allTopics.contains(topic))
         throw new TopicExistsException(s"Topic '$topic' already exists.")
-      val collidingTopics = allTopics.filter(Topic.hasCollision(topic, _))
+      val collidingTopics = allTopics.filter(TopicUtils.hasCollision(topic, _))
       if (collidingTopics.nonEmpty) {
         throw new InvalidTopicException(s"Topic '$topic' collides with existing topics: ${collidingTopics.mkString(", ")}")
       }
@@ -474,7 +474,7 @@ class AdminZkClient(zkClient: KafkaZkClient,
    * @param configs properties to validate for the topic
    */
   def validateTopicConfig(topic: String, configs: Properties): Unit = {
-    Topic.validate(topic)
+    TopicUtils.validate(topic)
     if (!zkClient.topicExists(topic))
       throw new UnknownTopicOrPartitionException(s"Topic '$topic' does not exist.")
     // remove the topic overrides

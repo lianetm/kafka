@@ -22,7 +22,7 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicIdPartition;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.Uuid;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.MetadataResponseData;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.protocol.Errors;
@@ -240,13 +240,13 @@ public class RequestTestUtils {
             }
 
             topicMetadata.add(new MetadataResponse.TopicMetadata(Errors.NONE, topic, topicIds.getOrDefault(topic, Uuid.ZERO_UUID),
-                    Topic.isInternal(topic), partitionMetadata, MetadataResponse.AUTHORIZED_OPERATIONS_OMITTED));
+                    TopicUtils.isInternal(topic), partitionMetadata, MetadataResponse.AUTHORIZED_OPERATIONS_OMITTED));
         }
 
         for (Map.Entry<String, Errors> topicErrorEntry : topicErrors.entrySet()) {
             String topic = topicErrorEntry.getKey();
             topicMetadata.add(new MetadataResponse.TopicMetadata(topicErrorEntry.getValue(), topic,
-                    Topic.isInternal(topic), Collections.emptyList()));
+                    TopicUtils.isInternal(topic), Collections.emptyList()));
         }
 
         return metadataResponse(nodes, clusterId, 0, topicMetadata, responseVersion);

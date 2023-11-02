@@ -16,7 +16,7 @@
  */
 package org.apache.kafka.server.util;
 
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.server.util.TopicFilter.IncludeList;
 import org.junit.jupiter.api.Test;
 
@@ -34,11 +34,11 @@ public class TopicFilterTest {
 
         IncludeList topicFilter2 = new IncludeList(".+");
         assertTrue(topicFilter2.isTopicAllowed("alltopics", true));
-        assertFalse(topicFilter2.isTopicAllowed(Topic.GROUP_METADATA_TOPIC_NAME, true));
-        assertTrue(topicFilter2.isTopicAllowed(Topic.GROUP_METADATA_TOPIC_NAME, false));
+        assertFalse(topicFilter2.isTopicAllowed(TopicUtils.GROUP_METADATA_TOPIC_NAME, true));
+        assertTrue(topicFilter2.isTopicAllowed(TopicUtils.GROUP_METADATA_TOPIC_NAME, false));
 
-        assertFalse(topicFilter2.isTopicAllowed(Topic.TRANSACTION_STATE_TOPIC_NAME, true));
-        assertTrue(topicFilter2.isTopicAllowed(Topic.TRANSACTION_STATE_TOPIC_NAME, false));
+        assertFalse(topicFilter2.isTopicAllowed(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, true));
+        assertTrue(topicFilter2.isTopicAllowed(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, false));
 
         IncludeList topicFilter3 = new IncludeList("included-topic.+");
         assertTrue(topicFilter3.isTopicAllowed("included-topic1", true));

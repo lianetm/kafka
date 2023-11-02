@@ -24,10 +24,10 @@ import collection.mutable
 import java.util.Date
 import java.text.SimpleDateFormat
 import kafka.utils.{CoreUtils, Exit, Logging}
+import org.apache.kafka.common.internals.TopicUtils
 
 import java.io.{BufferedOutputStream, OutputStream}
 import java.nio.charset.StandardCharsets
-import org.apache.kafka.common.internals.Topic
 import org.apache.kafka.server.util.CommandLineUtils
 
 /**
@@ -47,7 +47,7 @@ import org.apache.kafka.server.util.CommandLineUtils
 @deprecated(since = "3.6")
 object StateChangeLogMerger extends Logging {
   val dateFormatString = "yyyy-MM-dd HH:mm:ss,SSS"
-  val topicPartitionRegex = new Regex("\\[(" + Topic.LEGAL_CHARS + "+),( )*([0-9]+)\\]")
+  val topicPartitionRegex = new Regex("\\[(" + TopicUtils.LEGAL_CHARS + "+),( )*([0-9]+)\\]")
   val dateRegex = new Regex("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3}")
   val dateFormat = new SimpleDateFormat(dateFormatString)
   var files: List[String] = List()

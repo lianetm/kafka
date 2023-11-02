@@ -24,7 +24,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.types.Password;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.Serdes;
@@ -435,10 +435,10 @@ public abstract class AbstractResetIntegrationTest {
         // do not use list topics request, but read from the embedded cluster's zookeeper path directly to confirm
         if (additionalExistingTopic != null) {
             cluster.waitForRemainingTopics(30000, INPUT_TOPIC, OUTPUT_TOPIC, OUTPUT_TOPIC_2, OUTPUT_TOPIC_2_RERUN,
-                    Topic.GROUP_METADATA_TOPIC_NAME, additionalExistingTopic);
+                    TopicUtils.GROUP_METADATA_TOPIC_NAME, additionalExistingTopic);
         } else {
             cluster.waitForRemainingTopics(30000, INPUT_TOPIC, OUTPUT_TOPIC, OUTPUT_TOPIC_2, OUTPUT_TOPIC_2_RERUN,
-                    Topic.GROUP_METADATA_TOPIC_NAME);
+                    TopicUtils.GROUP_METADATA_TOPIC_NAME);
         }
     }
 }

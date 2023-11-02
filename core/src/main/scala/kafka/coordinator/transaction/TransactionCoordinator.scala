@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kafka.server.{KafkaConfig, MetadataCache, ReplicaManager, RequestLocal}
 import kafka.utils.Logging
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.AddPartitionsToTxnResponseData.AddPartitionsToTxnResult
 import org.apache.kafka.common.message.{DescribeTransactionsResponseData, ListTransactionsResponseData}
 import org.apache.kafka.common.metrics.Metrics
@@ -188,7 +188,7 @@ class TransactionCoordinator(txnConfig: TransactionConfig,
               if (error == Errors.NONE) {
                 info(s"Initialized transactionalId $transactionalId with producerId ${newMetadata.producerId} and producer " +
                   s"epoch ${newMetadata.producerEpoch} on partition " +
-                  s"${Topic.TRANSACTION_STATE_TOPIC_NAME}-${txnManager.partitionFor(transactionalId)}")
+                  s"${TopicUtils.TRANSACTION_STATE_TOPIC_NAME}-${txnManager.partitionFor(transactionalId)}")
                 responseCallback(initTransactionMetadata(newMetadata))
               } else {
                 info(s"Returning $error error code to client for $transactionalId's InitProducerId request")

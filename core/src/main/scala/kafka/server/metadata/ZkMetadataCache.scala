@@ -30,7 +30,7 @@ import kafka.utils.CoreUtils._
 import kafka.utils.Logging
 import kafka.utils.Implicits._
 import org.apache.kafka.admin.BrokerMetadata
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.UpdateMetadataRequestData.UpdateMetadataPartitionState
 import org.apache.kafka.common.{Cluster, Node, PartitionInfo, TopicPartition, Uuid}
 import org.apache.kafka.common.message.MetadataResponseData.MetadataResponseTopic
@@ -205,7 +205,7 @@ class ZkMetadataCache(
           .setErrorCode(Errors.NONE.code)
           .setName(topic)
           .setTopicId(snapshot.topicIds.getOrElse(topic, Uuid.ZERO_UUID))
-          .setIsInternal(Topic.isInternal(topic))
+          .setIsInternal(TopicUtils.isInternal(topic))
           .setPartitions(partitionMetadata.toBuffer.asJava)
       }
     }
@@ -366,7 +366,7 @@ class ZkMetadataCache(
           state.offlineReplicas.asScala.map(node).toArray)
       }
     val unauthorizedTopics = Collections.emptySet[String]
-    val internalTopics = getAllTopics(snapshot).filter(Topic.isInternal).asJava
+    val internalTopics = getAllTopics(snapshot).filter(TopicUtils.isInternal).asJava
     new Cluster(clusterId, nodes.values.toBuffer.asJava,
       partitions.toBuffer.asJava,
       unauthorizedTopics, internalTopics,

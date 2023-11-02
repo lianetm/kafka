@@ -40,7 +40,7 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.MetadataResponseData;
 import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.protocol.Errors;
@@ -341,14 +341,14 @@ public class TopicCommandIntegrationTest extends kafka.integration.KafkaServerTe
         String topic1 = "kafka.testTopic1";
         adminClient.createTopics(
                 Arrays.asList(new NewTopic(topic1, 2, (short) 2),
-                    new NewTopic(Topic.GROUP_METADATA_TOPIC_NAME, 2, (short) 2)))
+                    new NewTopic(TopicUtils.GROUP_METADATA_TOPIC_NAME, 2, (short) 2)))
             .all().get();
         waitForTopicCreated(topic1);
 
         String output = captureListTopicStandardOut(buildTopicCommandOptionsWithBootstrap("--list", "--exclude-internal"));
 
         assertTrue(output.contains(topic1));
-        assertFalse(output.contains(Topic.GROUP_METADATA_TOPIC_NAME));
+        assertFalse(output.contains(TopicUtils.GROUP_METADATA_TOPIC_NAME));
     }
 
     @ParameterizedTest(name = ToolsTestUtils.TEST_WITH_PARAMETERIZED_QUORUM_NAME)
@@ -570,20 +570,20 @@ public class TopicCommandIntegrationTest extends kafka.integration.KafkaServerTe
         TopicCommand.TopicCommandOptions createOffsetTopicOpts = buildTopicCommandOptionsWithBootstrap("--create",
             "--partitions", "1",
             "--replication-factor", "1",
-            "--topic", Topic.GROUP_METADATA_TOPIC_NAME);
+            "--topic", TopicUtils.GROUP_METADATA_TOPIC_NAME);
         createAndWaitTopic(createOffsetTopicOpts);
 
         // Try to delete the Topic.GROUP_METADATA_TOPIC_NAME which is allowed by default.
         // This is a difference between the new and the old command as the old one didn't allow internal topic deletion.
         // If deleting internal topics is not desired, ACLS should be used to control it.
         TopicCommand.TopicCommandOptions deleteOffsetTopicOpts =
-                buildTopicCommandOptionsWithBootstrap("--delete", "--topic", Topic.GROUP_METADATA_TOPIC_NAME);
-        String deleteOffsetTopicPath = kafka.zk.DeleteTopicsTopicZNode.path(Topic.GROUP_METADATA_TOPIC_NAME);
+                buildTopicCommandOptionsWithBootstrap("--delete", "--topic", TopicUtils.GROUP_METADATA_TOPIC_NAME);
+        String deleteOffsetTopicPath = kafka.zk.DeleteTopicsTopicZNode.path(TopicUtils.GROUP_METADATA_TOPIC_NAME);
         if (!isKRaftTest()) {
             assertFalse(zkClient().pathExists(deleteOffsetTopicPath), "Delete path for topic shouldn't exist before deletion.");
         }
         topicService.deleteTopic(deleteOffsetTopicOpts);
-        TestUtils.verifyTopicDeletion(zkClientOrNull(), Topic.GROUP_METADATA_TOPIC_NAME, 1, brokers());
+        TestUtils.verifyTopicDeletion(zkClientOrNull(), TopicUtils.GROUP_METADATA_TOPIC_NAME, 1, brokers());
     }
 
     @ParameterizedTest(name = ToolsTestUtils.TEST_WITH_PARAMETERIZED_QUORUM_NAME)
@@ -908,18 +908,18 @@ public class TopicCommandIntegrationTest extends kafka.integration.KafkaServerTe
             buildTopicCommandOptionsWithBootstrap("--create", "--partitions", "1", "--replication-factor", "1", "--topic", testTopicName));
         // create a internal topic
         createAndWaitTopic(
-            buildTopicCommandOptionsWithBootstrap("--create", "--partitions", "1", "--replication-factor", "1", "--topic", Topic.GROUP_METADATA_TOPIC_NAME));
+            buildTopicCommandOptionsWithBootstrap("--create", "--partitions", "1", "--replication-factor", "1", "--topic", TopicUtils.GROUP_METADATA_TOPIC_NAME));
 
         // test describe
         String output = captureDescribeTopicStandardOut(buildTopicCommandOptionsWithBootstrap("--describe", "--describe", "--exclude-internal"));
         assertTrue(output.contains(testTopicName),
             String.format("Output should have contained %s", testTopicName));
-        assertFalse(output.contains(Topic.GROUP_METADATA_TOPIC_NAME));
+        assertFalse(output.contains(TopicUtils.GROUP_METADATA_TOPIC_NAME));
 
         // test list
         output = captureListTopicStandardOut(buildTopicCommandOptionsWithBootstrap("--list", "--exclude-internal"));
         assertTrue(output.contains(testTopicName));
-        assertFalse(output.contains(Topic.GROUP_METADATA_TOPIC_NAME));
+        assertFalse(output.contains(TopicUtils.GROUP_METADATA_TOPIC_NAME));
     }
 
     @ParameterizedTest(name = ToolsTestUtils.TEST_WITH_PARAMETERIZED_QUORUM_NAME)

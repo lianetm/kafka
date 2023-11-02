@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kafka.utils.TestUtils
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.record._
 import org.apache.kafka.common.utils.{MockTime, Utils}
 import org.apache.kafka.storage.internals.log.{AppendOrigin, CompletedTxn, LogFileUtils, LogOffsetMetadata, ProducerAppendInfo, ProducerStateEntry, ProducerStateManager, ProducerStateManagerConfig, TxnMetadata, VerificationStateEntry}
@@ -925,7 +925,7 @@ class ProducerStateManagerTest {
 
   @Test
   def testSequenceNotValidatedForGroupMetadataTopic(): Unit = {
-    val partition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, 0)
+    val partition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, 0)
     val stateManager = new ProducerStateManager(partition, logDir,
       maxTransactionTimeoutMs, producerStateManagerConfig, time)
 

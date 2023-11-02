@@ -21,7 +21,6 @@ import kafka.controller.StateChangeLogger
 import kafka.server.{CachedControllerId, KRaftCachedControllerId, MetadataCache}
 import kafka.utils.Logging
 import org.apache.kafka.admin.BrokerMetadata
-import org.apache.kafka.common.internals.Topic
 import org.apache.kafka.common.message.MetadataResponseData.{MetadataResponsePartition, MetadataResponseTopic}
 import org.apache.kafka.common.{Cluster, Node, PartitionInfo, TopicPartition, Uuid}
 import org.apache.kafka.common.message.UpdateMetadataRequestData.UpdateMetadataPartitionState
@@ -34,6 +33,7 @@ import java.util
 import java.util.{Collections, Properties}
 import java.util.concurrent.ThreadLocalRandom
 import org.apache.kafka.common.config.ConfigResource
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.{DescribeClientQuotasRequestData, DescribeClientQuotasResponseData}
 import org.apache.kafka.common.message.{DescribeUserScramCredentialsRequestData, DescribeUserScramCredentialsResponseData}
 import org.apache.kafka.metadata.{PartitionRegistration, Replicas}
@@ -180,7 +180,7 @@ class KRaftMetadataCache(val brokerId: Int) extends MetadataCache with Logging w
           .setErrorCode(Errors.NONE.code)
           .setName(topic)
           .setTopicId(Option(image.topics().getTopic(topic).id()).getOrElse(Uuid.ZERO_UUID))
-          .setIsInternal(Topic.isInternal(topic))
+          .setIsInternal(TopicUtils.isInternal(topic))
           .setPartitions(partitionMetadata.toBuffer.asJava)
       }
     }
@@ -349,7 +349,7 @@ class KRaftMetadataCache(val brokerId: Int) extends MetadataCache with Logging w
           partition.isr.map(replica => node(replica)),
           getOfflineReplicas(image, partition, listenerName).asScala.
             map(replica => node(replica)).toArray))
-        if (Topic.isInternal(topic.name())) {
+        if (TopicUtils.isInternal(topic.name())) {
           internalTopics.add(topic.name())
         }
       }

@@ -30,7 +30,7 @@ import org.apache.kafka.clients.admin.{Admin, AlterClientQuotasOptions, AlterCon
 import org.apache.kafka.common.config.{ConfigResource, TopicConfig}
 import org.apache.kafka.common.config.types.Password
 import org.apache.kafka.common.errors.InvalidConfigurationException
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.quota.{ClientQuotaAlteration, ClientQuotaEntity, ClientQuotaFilter, ClientQuotaFilterComponent}
 import org.apache.kafka.common.security.JaasUtils
 import org.apache.kafka.common.security.scram.internals.{ScramCredentialUtils, ScramFormatter, ScramMechanism}
@@ -563,7 +563,7 @@ object ConfigCommand extends Logging {
     val (configResourceType, dynamicConfigSource) = entityType match {
       case ConfigType.Topic =>
         if (entityName.nonEmpty)
-          Topic.validate(entityName)
+          TopicUtils.validate(entityName)
         (ConfigResource.Type.TOPIC, Some(ConfigEntry.ConfigSource.DYNAMIC_TOPIC_CONFIG))
       case ConfigType.Broker => entityName match {
         case BrokerDefaultEntityName =>

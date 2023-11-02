@@ -19,7 +19,7 @@ package org.apache.kafka.server.log.remote.storage;
 import org.apache.kafka.common.TopicIdPartition;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.Uuid;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -62,7 +62,7 @@ public final class RemoteTopicPartitionDirectory {
     /**
      * The format of a Kafka topic-partition directory. Follows the structure Topic-Partition-Uuid.
      */
-    private static final Pattern FILENAME_FORMAT = compile("(" + Topic.LEGAL_CHARS + "+)-(\\d+)-(" + UUID_LEGAL_CHARS + ")");
+    private static final Pattern FILENAME_FORMAT = compile("(" + TopicUtils.LEGAL_CHARS + "+)-(\\d+)-(" + UUID_LEGAL_CHARS + ")");
     static final int GROUP_TOPIC = 1;
     static final int GROUP_PARTITION = 2;
     static final int GROUP_UUID = 3;

@@ -32,8 +32,8 @@ import org.apache.kafka.common.acl.AclOperation._
 import org.apache.kafka.common.acl.AclOperation
 import org.apache.kafka.common.config.ConfigResource
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME, isInternal}
-import org.apache.kafka.common.internals.{FatalExitError, Topic}
+import org.apache.kafka.common.internals.TopicUtils.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME, isInternal}
+import org.apache.kafka.common.internals.{FatalExitError, TopicUtils}
 import org.apache.kafka.common.message.AddPartitionsToTxnResponseData.AddPartitionsToTxnResult
 import org.apache.kafka.common.message.AddPartitionsToTxnResponseData.AddPartitionsToTxnResultCollection
 import org.apache.kafka.common.message.AlterConfigsResponseData.AlterConfigsResourceResponse
@@ -1205,7 +1205,7 @@ class KafkaApis(val requestChannel: RequestChannel,
       } else {
         nonExistingTopics.map { topic =>
           val error = try {
-            Topic.validate(topic)
+            TopicUtils.validate(topic)
             Errors.UNKNOWN_TOPIC_OR_PARTITION
           } catch {
             case _: InvalidTopicException =>
@@ -1216,7 +1216,7 @@ class KafkaApis(val requestChannel: RequestChannel,
             error,
             topic,
             metadataCache.getTopicId(topic),
-            Topic.isInternal(topic),
+            TopicUtils.isInternal(topic),
             util.Collections.emptyList()
           )
         }
@@ -1928,10 +1928,10 @@ class KafkaApis(val requestChannel: RequestChannel,
           /* The cluster metadata topic is an internal topic with a different implementation. The user should not be
            * allowed to create it as a regular topic.
            */
-          if (topicNames.contains(Topic.CLUSTER_METADATA_TOPIC_NAME)) {
-            info(s"Rejecting creation of internal topic ${Topic.CLUSTER_METADATA_TOPIC_NAME}")
+          if (topicNames.contains(TopicUtils.CLUSTER_METADATA_TOPIC_NAME)) {
+            info(s"Rejecting creation of internal topic ${TopicUtils.CLUSTER_METADATA_TOPIC_NAME}")
           }
-          topicNames.diff(Set(Topic.CLUSTER_METADATA_TOPIC_NAME))
+          topicNames.diff(Set(TopicUtils.CLUSTER_METADATA_TOPIC_NAME))
       }
 
       val authorizedTopics = if (hasClusterAuthorization) {
@@ -2465,7 +2465,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         // Only request versions less than 4 need write authorization since they come from clients.
         val authorizedTopics = 
           if (version < 4) 
-            authHelper.filterByAuthorized(request.context, WRITE, TOPIC, partitionsToAdd.filterNot(tp => Topic.isInternal(tp.topic)))(_.topic) 
+            authHelper.filterByAuthorized(request.context, WRITE, TOPIC, partitionsToAdd.filterNot(tp => TopicUtils.isInternal(tp.topic)))(_.topic)
           else 
             partitionsToAdd.map(_.topic).toSet
         for (topicPartition <- partitionsToAdd) {
@@ -3595,7 +3595,7 @@ class KafkaApis(val requestChannel: RequestChannel,
 
   private def checkValidTopic(topic: String): Option[ApiError] = {
     try {
-      Topic.validate(topic)
+      TopicUtils.validate(topic)
       None
     } catch {
       case e: Throwable => Some(ApiError.fromThrowable(e))

@@ -24,7 +24,7 @@ import kafka.server.{KafkaConfig, ReplicaManager, RequestLocal}
 import kafka.utils.Logging
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.TimeoutException
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.coordinator.group.GroupCoordinator
 import org.apache.kafka.image.loader.LoaderManifest
 import org.apache.kafka.image.publisher.MetadataPublisher
@@ -182,7 +182,7 @@ class BrokerMetadataPublisher(
           // Update the group coordinator of local changes
           updateCoordinator(newImage,
             delta,
-            Topic.GROUP_METADATA_TOPIC_NAME,
+            TopicUtils.GROUP_METADATA_TOPIC_NAME,
             groupCoordinator.onElection,
             (partitionIndex, leaderEpochOpt) => groupCoordinator.onResignation(partitionIndex, toOptionalInt(leaderEpochOpt))
           )
@@ -194,7 +194,7 @@ class BrokerMetadataPublisher(
           // Update the transaction coordinator of local changes
           updateCoordinator(newImage,
             delta,
-            Topic.TRANSACTION_STATE_TOPIC_NAME,
+            TopicUtils.TRANSACTION_STATE_TOPIC_NAME,
             txnCoordinator.onElection,
             txnCoordinator.onResignation)
         } catch {
@@ -331,7 +331,7 @@ class BrokerMetadataPublisher(
     }
     try {
       // Start the group coordinator.
-      groupCoordinator.startup(() => metadataCache.numPartitions(Topic.GROUP_METADATA_TOPIC_NAME)
+      groupCoordinator.startup(() => metadataCache.numPartitions(TopicUtils.GROUP_METADATA_TOPIC_NAME)
         .getOrElse(config.offsetsTopicPartitions))
     } catch {
       case t: Throwable => fatalFaultHandler.handleFault("Error starting GroupCoordinator", t)
@@ -339,7 +339,7 @@ class BrokerMetadataPublisher(
     try {
       // Start the transaction coordinator.
       txnCoordinator.startup(() => metadataCache.numPartitions(
-        Topic.TRANSACTION_STATE_TOPIC_NAME).getOrElse(config.transactionTopicPartitions))
+        TopicUtils.TRANSACTION_STATE_TOPIC_NAME).getOrElse(config.transactionTopicPartitions))
     } catch {
       case t: Throwable => fatalFaultHandler.handleFault("Error starting TransactionCoordinator", t)
     }

@@ -23,7 +23,7 @@ import kafka.log.remote.RemoteLogManager
 import kafka.server.{BrokerTopicMetrics, BrokerTopicStats, RequestLocal}
 import kafka.utils._
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.DescribeProducersResponseData
 import org.apache.kafka.common.record.FileRecords.TimestampAndOffset
 import org.apache.kafka.common.record._
@@ -1884,9 +1884,9 @@ object UnifiedLog extends Logging {
                          topic: String): Boolean = {
     // Remote log is enabled only for non-compact and non-internal topics
     remoteStorageSystemEnable &&
-      !(config.compact || Topic.isInternal(topic)
+      !(config.compact || TopicUtils.isInternal(topic)
         || TopicBasedRemoteLogMetadataManagerConfig.REMOTE_LOG_METADATA_TOPIC_NAME.equals(topic)
-        || Topic.CLUSTER_METADATA_TOPIC_NAME.equals(topic)) &&
+        || TopicUtils.CLUSTER_METADATA_TOPIC_NAME.equals(topic)) &&
       config.remoteStorageEnable()
   }
 

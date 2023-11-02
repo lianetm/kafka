@@ -19,7 +19,7 @@ package kafka.server
 
 import kafka.utils._
 import org.apache.kafka.common.Uuid
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.CreateTopicsRequestData
 import org.apache.kafka.common.message.CreateTopicsRequestData.CreatableTopicCollection
 import org.apache.kafka.common.protocol.{ApiKeys, Errors}
@@ -204,8 +204,8 @@ class CreateTopicsRequestTest extends AbstractCreateTopicsRequestTest {
   @ValueSource(strings = Array("zk", "kraft"))
   def testCreateClusterMetadataTopic(quorum: String): Unit = {
     validateErrorCreateTopicsRequests(
-      topicsReq(Seq(topicReq(Topic.CLUSTER_METADATA_TOPIC_NAME))),
-      Map(Topic.CLUSTER_METADATA_TOPIC_NAME -> error(Errors.TOPIC_AUTHORIZATION_FAILED, Some("Authorization failed.")))
+      topicsReq(Seq(topicReq(TopicUtils.CLUSTER_METADATA_TOPIC_NAME))),
+      Map(TopicUtils.CLUSTER_METADATA_TOPIC_NAME -> error(Errors.TOPIC_AUTHORIZATION_FAILED, Some("Authorization failed.")))
     )
   }
 }

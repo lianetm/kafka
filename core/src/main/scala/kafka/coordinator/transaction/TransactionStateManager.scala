@@ -26,7 +26,7 @@ import kafka.utils.CoreUtils.{inReadLock, inWriteLock}
 import kafka.utils.{Logging, Pool}
 import kafka.utils.Implicits._
 import org.apache.kafka.common.config.TopicConfig
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.ListTransactionsResponseData
 import org.apache.kafka.common.metrics.Metrics
 import org.apache.kafka.common.metrics.stats.{Avg, Max}
@@ -239,7 +239,7 @@ class TransactionStateManager(brokerId: Int,
   private[transaction] def removeExpiredTransactionalIds(): Unit = {
     inReadLock(stateLock) {
       transactionMetadataCache.forKeyValue { (partitionId, partitionCacheEntry) =>
-        val transactionPartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, partitionId)
+        val transactionPartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, partitionId)
         removeExpiredTransactionalIds(transactionPartition, partitionCacheEntry)
       }
     }
@@ -516,7 +516,7 @@ class TransactionStateManager(brokerId: Int,
    * the previous loading / unloading operation.
    */
   def loadTransactionsForTxnTopicPartition(partitionId: Int, coordinatorEpoch: Int, sendTxnMarkers: SendTxnMarkersCallback): Unit = {
-    val topicPartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, partitionId)
+    val topicPartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, partitionId)
     val partitionAndLeaderEpoch = TransactionPartitionAndLeaderEpoch(partitionId, coordinatorEpoch)
 
     inWriteLock(stateLock) {
@@ -577,7 +577,7 @@ class TransactionStateManager(brokerId: Int,
   }
 
   def removeTransactionsForTxnTopicPartition(partitionId: Int): Unit = {
-    val topicPartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, partitionId)
+    val topicPartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, partitionId)
     inWriteLock(stateLock) {
       loadingPartitions --= loadingPartitions.filter(_.txnPartitionId == partitionId)
       transactionMetadataCache.remove(partitionId).foreach { txnMetadataCacheEntry =>
@@ -592,7 +592,7 @@ class TransactionStateManager(brokerId: Int,
    * that belong to that partition.
    */
   def removeTransactionsForTxnTopicPartition(partitionId: Int, coordinatorEpoch: Int): Unit = {
-    val topicPartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, partitionId)
+    val topicPartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, partitionId)
     val partitionAndLeaderEpoch = TransactionPartitionAndLeaderEpoch(partitionId, coordinatorEpoch)
 
     inWriteLock(stateLock) {
@@ -627,7 +627,7 @@ class TransactionStateManager(brokerId: Int,
     val timestamp = time.milliseconds()
 
     val records = MemoryRecords.withRecords(TransactionLog.EnforcedCompressionType, new SimpleRecord(timestamp, keyBytes, valueBytes))
-    val topicPartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, partitionFor(transactionalId))
+    val topicPartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, partitionFor(transactionalId))
     val recordsPerPartition = Map(topicPartition -> records)
 
     // set the callback function to update transaction status in cache after log append completed

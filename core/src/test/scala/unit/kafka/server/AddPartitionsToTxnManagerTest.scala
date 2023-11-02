@@ -22,7 +22,7 @@ import kafka.utils.Implicits.MapExtensionMethods
 import kafka.utils.TestUtils
 import org.apache.kafka.clients.{ClientResponse, NetworkClient}
 import org.apache.kafka.common.errors.{AuthenticationException, SaslAuthenticationException, UnsupportedVersionException}
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.AddPartitionsToTxnRequestData.{AddPartitionsToTxnTopic, AddPartitionsToTxnTopicCollection, AddPartitionsToTxnTransaction, AddPartitionsToTxnTransactionCollection}
 import org.apache.kafka.common.message.{AddPartitionsToTxnResponseData, MetadataResponseData}
 import org.apache.kafka.common.message.AddPartitionsToTxnResponseData.AddPartitionsToTxnResultCollection
@@ -98,10 +98,10 @@ class AddPartitionsToTxnManagerTest {
     when(partitionFor.apply(transactionalId1)).thenReturn(0)
     when(partitionFor.apply(transactionalId2)).thenReturn(1)
     when(partitionFor.apply(transactionalId3)).thenReturn(0)
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)
@@ -167,10 +167,10 @@ class AddPartitionsToTxnManagerTest {
     when(partitionFor.apply(transactionalId1)).thenReturn(0)
     when(partitionFor.apply(transactionalId2)).thenReturn(1)
     when(partitionFor.apply(transactionalId3)).thenReturn(2)
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)
@@ -247,32 +247,32 @@ class AddPartitionsToTxnManagerTest {
     }
 
     // The transaction state topic does not exist.
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq())
     checkError()
 
     // The metadata of the transaction state topic returns an error.
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setErrorCode(Errors.BROKER_NOT_AVAILABLE.code)
       ))
     checkError()
 
     // The partition does not exist.
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
       ))
     checkError()
 
     // The partition has no leader.
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)
@@ -282,10 +282,10 @@ class AddPartitionsToTxnManagerTest {
     checkError()
 
     // The leader is not available.
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)
@@ -299,10 +299,10 @@ class AddPartitionsToTxnManagerTest {
   def testAddPartitionsToTxnHandlerErrorHandling(): Unit = {
     when(partitionFor.apply(transactionalId1)).thenReturn(0)
     when(partitionFor.apply(transactionalId2)).thenReturn(0)
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)
@@ -380,10 +380,10 @@ class AddPartitionsToTxnManagerTest {
 
     when(partitionFor.apply(transactionalId1)).thenReturn(0)
     when(partitionFor.apply(transactionalId2)).thenReturn(1)
-    when(metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
+    when(metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), config.interBrokerListenerName))
       .thenReturn(Seq(
         new MetadataResponseData.MetadataResponseTopic()
-          .setName(Topic.TRANSACTION_STATE_TOPIC_NAME)
+          .setName(TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
           .setPartitions(List(
             new MetadataResponseData.MetadataResponsePartition()
               .setPartitionIndex(0)

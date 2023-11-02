@@ -37,7 +37,7 @@ import org.apache.kafka.clients.admin.{AlterConfigOp, ConfigEntry}
 import org.apache.kafka.common.acl.AclOperation
 import org.apache.kafka.common.config.ConfigResource
 import org.apache.kafka.common.errors.UnsupportedVersionException
-import org.apache.kafka.common.internals.{KafkaFutureImpl, Topic}
+import org.apache.kafka.common.internals.{KafkaFutureImpl, TopicUtils}
 import org.apache.kafka.common.memory.MemoryPool
 import org.apache.kafka.common.config.ConfigResource.Type.{BROKER, BROKER_LOGGER}
 import org.apache.kafka.common.message.AddPartitionsToTxnRequestData.{AddPartitionsToTxnTopic, AddPartitionsToTxnTopicCollection, AddPartitionsToTxnTransaction, AddPartitionsToTxnTransactionCollection}
@@ -1059,14 +1059,14 @@ class KafkaApisTest {
           when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
           authorizeResource(authorizer, AclOperation.DESCRIBE, ResourceType.GROUP,
             groupId, AuthorizationResult.ALLOWED)
-          Topic.GROUP_METADATA_TOPIC_NAME
+          TopicUtils.GROUP_METADATA_TOPIC_NAME
         case CoordinatorType.TRANSACTION =>
           topicConfigOverride.put(KafkaConfig.TransactionsTopicPartitionsProp, numBrokersNeeded.toString)
           topicConfigOverride.put(KafkaConfig.TransactionsTopicReplicationFactorProp, numBrokersNeeded.toString)
           when(txnCoordinator.transactionTopicConfigs).thenReturn(new Properties)
           authorizeResource(authorizer, AclOperation.DESCRIBE, ResourceType.TRANSACTIONAL_ID,
             groupId, AuthorizationResult.ALLOWED)
-          Topic.TRANSACTION_STATE_TOPIC_NAME
+          TopicUtils.TRANSACTION_STATE_TOPIC_NAME
         case _ =>
           throw new IllegalStateException(s"Unknown coordinator type $coordinatorType")
       }
@@ -1103,13 +1103,13 @@ class KafkaApisTest {
 
   @Test
   def testMetadataAutoTopicCreationForOffsetTopic(): Unit = {
-    testMetadataAutoTopicCreation(Topic.GROUP_METADATA_TOPIC_NAME, enableAutoTopicCreation = true,
+    testMetadataAutoTopicCreation(TopicUtils.GROUP_METADATA_TOPIC_NAME, enableAutoTopicCreation = true,
       expectedError = Errors.UNKNOWN_TOPIC_OR_PARTITION)
   }
 
   @Test
   def testMetadataAutoTopicCreationForTxnTopic(): Unit = {
-    testMetadataAutoTopicCreation(Topic.TRANSACTION_STATE_TOPIC_NAME, enableAutoTopicCreation = true,
+    testMetadataAutoTopicCreation(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, enableAutoTopicCreation = true,
       expectedError = Errors.UNKNOWN_TOPIC_OR_PARTITION)
   }
 
@@ -1121,13 +1121,13 @@ class KafkaApisTest {
 
   @Test
   def testMetadataAutoTopicCreationDisabledForOffsetTopic(): Unit = {
-    testMetadataAutoTopicCreation(Topic.GROUP_METADATA_TOPIC_NAME, enableAutoTopicCreation = false,
+    testMetadataAutoTopicCreation(TopicUtils.GROUP_METADATA_TOPIC_NAME, enableAutoTopicCreation = false,
       expectedError = Errors.UNKNOWN_TOPIC_OR_PARTITION)
   }
 
   @Test
   def testMetadataAutoTopicCreationDisabledForTxnTopic(): Unit = {
-    testMetadataAutoTopicCreation(Topic.TRANSACTION_STATE_TOPIC_NAME, enableAutoTopicCreation = false,
+    testMetadataAutoTopicCreation(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, enableAutoTopicCreation = false,
       expectedError = Errors.UNKNOWN_TOPIC_OR_PARTITION)
   }
 
@@ -1164,13 +1164,13 @@ class KafkaApisTest {
     val topicConfigOverride = mutable.Map.empty[String, String]
     val isInternal =
       topicName match {
-        case Topic.GROUP_METADATA_TOPIC_NAME =>
+        case TopicUtils.GROUP_METADATA_TOPIC_NAME =>
           topicConfigOverride.put(KafkaConfig.OffsetsTopicPartitionsProp, numBrokersNeeded.toString)
           topicConfigOverride.put(KafkaConfig.OffsetsTopicReplicationFactorProp, numBrokersNeeded.toString)
           when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
           true
 
-        case Topic.TRANSACTION_STATE_TOPIC_NAME =>
+        case TopicUtils.TRANSACTION_STATE_TOPIC_NAME =>
           topicConfigOverride.put(KafkaConfig.TransactionsTopicPartitionsProp, numBrokersNeeded.toString)
           topicConfigOverride.put(KafkaConfig.TransactionsTopicReplicationFactorProp, numBrokersNeeded.toString)
           when(txnCoordinator.transactionTopicConfigs).thenReturn(new Properties)
@@ -1975,7 +1975,7 @@ class KafkaApisTest {
         ArgumentMatchers.eq(transactionalId),
         ArgumentMatchers.eq(producerId),
         ArgumentMatchers.eq(epoch),
-        ArgumentMatchers.eq(Set(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, partition))),
+        ArgumentMatchers.eq(Set(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, partition))),
         responseCallback.capture(),
         ArgumentMatchers.eq(requestLocal)
       )).thenAnswer(_ => responseCallback.getValue.apply(Errors.PRODUCER_FENCED))
@@ -2565,8 +2565,8 @@ class KafkaApisTest {
     val brokerEpoch = 230498320L
 
     val fooPartition = new TopicPartition("foo", 0)
-    val groupMetadataPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, 0)
-    val txnStatePartition = new TopicPartition(Topic.TRANSACTION_STATE_TOPIC_NAME, 0)
+    val groupMetadataPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, 0)
+    val txnStatePartition = new TopicPartition(TopicUtils.TRANSACTION_STATE_TOPIC_NAME, 0)
 
     val topicStates = Seq(
       new StopReplicaTopicState()

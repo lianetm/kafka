@@ -37,7 +37,7 @@ public class TopicTest {
         String[] validTopicNames = {"valid", "TOPIC", "nAmEs", "ar6", "VaL1d", "_0-9_.", "...", maxLengthString};
 
         for (String topicName : validTopicNames) {
-            Topic.validate(topicName);
+            TopicUtils.validate(topicName);
         }
     }
 
@@ -49,7 +49,7 @@ public class TopicTest {
 
         for (String topicName : invalidTopicNames) {
             try {
-                Topic.validate(topicName);
+                TopicUtils.validate(topicName);
                 fail("No exception was thrown for topic with invalid name: " + topicName);
             } catch (InvalidTopicException e) {
                 // Good
@@ -63,7 +63,7 @@ public class TopicTest {
 
         for (char c : invalidChars) {
             String topicName = "Is " + c + "illegal";
-            assertFalse(Topic.containsValidPattern(topicName));
+            assertFalse(TopicUtils.containsValidPattern(topicName));
         }
     }
 
@@ -76,18 +76,18 @@ public class TopicTest {
         );
 
         for (String topic : falseTopics)
-            assertFalse(Topic.hasCollisionChars(topic));
+            assertFalse(TopicUtils.hasCollisionChars(topic));
 
         for (String topic : trueTopics)
-            assertTrue(Topic.hasCollisionChars(topic));
+            assertTrue(TopicUtils.hasCollisionChars(topic));
     }
 
     @Test
     public void testUnifyCollisionChars() {
-        assertEquals("topic", Topic.unifyCollisionChars("topic"));
-        assertEquals("_topic", Topic.unifyCollisionChars(".topic"));
-        assertEquals("_topic", Topic.unifyCollisionChars("_topic"));
-        assertEquals("__topic", Topic.unifyCollisionChars("_.topic"));
+        assertEquals("topic", TopicUtils.unifyCollisionChars("topic"));
+        assertEquals("_topic", TopicUtils.unifyCollisionChars(".topic"));
+        assertEquals("_topic", TopicUtils.unifyCollisionChars("_topic"));
+        assertEquals("__topic", TopicUtils.unifyCollisionChars("_.topic"));
     }
 
     @Test
@@ -97,18 +97,18 @@ public class TopicTest {
 
         // Self
         for (String topic : periodFirstMiddleLastNone)
-            assertTrue(Topic.hasCollision(topic, topic));
+            assertTrue(TopicUtils.hasCollision(topic, topic));
 
         for (String topic : underscoreFirstMiddleLastNone)
-            assertTrue(Topic.hasCollision(topic, topic));
+            assertTrue(TopicUtils.hasCollision(topic, topic));
 
         // Same Position
         for (int i = 0; i < periodFirstMiddleLastNone.size(); ++i)
-            assertTrue(Topic.hasCollision(periodFirstMiddleLastNone.get(i), underscoreFirstMiddleLastNone.get(i)));
+            assertTrue(TopicUtils.hasCollision(periodFirstMiddleLastNone.get(i), underscoreFirstMiddleLastNone.get(i)));
 
         // Different Position
         Collections.reverse(underscoreFirstMiddleLastNone);
         for (int i = 0; i < periodFirstMiddleLastNone.size(); ++i)
-            assertFalse(Topic.hasCollision(periodFirstMiddleLastNone.get(i), underscoreFirstMiddleLastNone.get(i)));
+            assertFalse(TopicUtils.hasCollision(periodFirstMiddleLastNone.get(i), underscoreFirstMiddleLastNone.get(i)));
     }
 }

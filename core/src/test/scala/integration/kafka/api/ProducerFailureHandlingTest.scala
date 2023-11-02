@@ -25,7 +25,7 @@ import kafka.utils.{TestInfoUtils, TestUtils}
 import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.record.{DefaultRecord, DefaultRecordBatch}
 import org.junit.jupiter.api.Assertions._
 import org.junit.jupiter.api.{AfterEach, BeforeEach, TestInfo}
@@ -227,7 +227,7 @@ class ProducerFailureHandlingTest extends KafkaServerTestHarness {
 
     createOffsetsTopic()
     val thrown = assertThrows(classOf[ExecutionException],
-      () => producer2.send(new ProducerRecord(Topic.GROUP_METADATA_TOPIC_NAME, "test".getBytes, "test".getBytes)).get)
+      () => producer2.send(new ProducerRecord(TopicUtils.GROUP_METADATA_TOPIC_NAME, "test".getBytes, "test".getBytes)).get)
     assertTrue(thrown.getCause.isInstanceOf[InvalidTopicException], "Unexpected exception while sending to an invalid topic " + thrown.getCause)
   }
 

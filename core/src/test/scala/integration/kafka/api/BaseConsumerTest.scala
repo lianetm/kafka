@@ -18,8 +18,8 @@ package kafka.api
 
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.{ClusterResource, ClusterResourceListener, PartitionInfo}
-import org.apache.kafka.common.internals.Topic
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions._
@@ -92,7 +92,7 @@ abstract class BaseConsumerTest extends AbstractConsumerTest {
     // get metadata for the topic
     var parts: Seq[PartitionInfo] = null
     while (parts == null)
-      parts = consumer.partitionsFor(Topic.GROUP_METADATA_TOPIC_NAME).asScala
+      parts = consumer.partitionsFor(TopicUtils.GROUP_METADATA_TOPIC_NAME).asScala
     assertEquals(1, parts.size)
     assertNotNull(parts.head.leader())
 

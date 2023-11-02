@@ -23,7 +23,7 @@ import kafka.server._
 import kafka.utils.Logging
 import org.apache.kafka.common.{TopicIdPartition, TopicPartition}
 import org.apache.kafka.common.config.TopicConfig
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.JoinGroupResponseData.JoinGroupResponseMember
 import org.apache.kafka.common.message.LeaveGroupRequestData.MemberIdentity
 import org.apache.kafka.common.metrics.Metrics
@@ -946,7 +946,7 @@ private[group] class GroupCoordinator(
   def scheduleHandleTxnCompletion(producerId: Long,
                                   offsetsPartitions: Iterable[TopicPartition],
                                   transactionResult: TransactionResult): Unit = {
-    require(offsetsPartitions.forall(_.topic == Topic.GROUP_METADATA_TOPIC_NAME))
+    require(offsetsPartitions.forall(_.topic == TopicUtils.GROUP_METADATA_TOPIC_NAME))
     val isCommit = transactionResult == TransactionResult.COMMIT
     groupManager.scheduleHandleTxnCompletion(producerId, offsetsPartitions.map(_.partition).toSet, isCommit)
   }
@@ -1450,7 +1450,7 @@ private[group] class GroupCoordinator(
     group.transitionTo(PreparingRebalance)
 
     info(s"Preparing to rebalance group ${group.groupId} in state ${group.currentState} with old generation " +
-      s"${group.generationId} (${Topic.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)}) (reason: $reason)")
+      s"${group.generationId} (${TopicUtils.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)}) (reason: $reason)")
 
     val groupKey = GroupJoinKey(group.groupId)
     rebalancePurgatory.tryCompleteElseWatch(delayedRebalance, Seq(groupKey))
@@ -1513,7 +1513,7 @@ private[group] class GroupCoordinator(
         group.initNextGeneration()
         if (group.is(Empty)) {
           info(s"Group ${group.groupId} with generation ${group.generationId} is now empty " +
-            s"(${Topic.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)})")
+            s"(${TopicUtils.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)})")
 
           groupManager.storeGroup(group, Map.empty, error => {
             if (error != Errors.NONE) {
@@ -1525,7 +1525,7 @@ private[group] class GroupCoordinator(
           }, RequestLocal.NoCaching)
         } else {
           info(s"Stabilized group ${group.groupId} generation ${group.generationId} " +
-            s"(${Topic.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)}) with ${group.size} members")
+            s"(${TopicUtils.GROUP_METADATA_TOPIC_NAME}-${partitionFor(group.groupId)}) with ${group.size} members")
 
           // trigger the awaiting join group response callback for all the members after rebalancing
           for (member <- group.allMemberMetadata) {

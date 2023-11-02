@@ -16,7 +16,7 @@
  */
 package org.apache.kafka.jmh.common;
 
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -47,7 +47,7 @@ public class TopicBenchmark {
     @Benchmark
     public BenchState testValidate(BenchState state) {
         // validate doesn't return anything, so return `state` to prevent the JVM from optimising the whole call away
-        Topic.validate(state.topicName);
+        TopicUtils.validate(state.topicName);
         return state;
     }
 }

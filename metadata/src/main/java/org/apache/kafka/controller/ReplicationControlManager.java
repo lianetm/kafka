@@ -35,7 +35,7 @@ import org.apache.kafka.common.errors.ThrottlingQuotaExceededException;
 import org.apache.kafka.common.errors.UnknownServerException;
 import org.apache.kafka.common.errors.UnknownTopicIdException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.AlterPartitionRequestData;
 import org.apache.kafka.common.message.AlterPartitionRequestData.BrokerState;
 import org.apache.kafka.common.message.AlterPartitionResponseData;
@@ -424,8 +424,8 @@ public class ReplicationControlManager {
                         " and new ID is " + record.topicId());
             }
         }
-        if (Topic.hasCollisionChars(record.name())) {
-            String normalizedName = Topic.unifyCollisionChars(record.name());
+        if (TopicUtils.hasCollisionChars(record.name())) {
+            String normalizedName = TopicUtils.unifyCollisionChars(record.name());
             TimelineHashSet<String> topicNames = topicsWithCollisionChars.get(normalizedName);
             if (topicNames == null) {
                 topicNames = new TimelineHashSet<>(snapshotRegistry, 1);
@@ -535,8 +535,8 @@ public class ReplicationControlManager {
                 " to remove.");
         }
         topicsByName.remove(topic.name);
-        if (Topic.hasCollisionChars(topic.name)) {
-            String normalizedName = Topic.unifyCollisionChars(topic.name);
+        if (TopicUtils.hasCollisionChars(topic.name)) {
+            String normalizedName = TopicUtils.unifyCollisionChars(topic.name);
             TimelineHashSet<String> colliding = topicsWithCollisionChars.get(normalizedName);
             if (colliding != null) {
                 colliding.remove(topic.name);
@@ -830,13 +830,13 @@ public class ReplicationControlManager {
         for (CreatableTopic topic : topics) {
             if (topicErrors.containsKey(topic.name())) continue;
             try {
-                Topic.validate(topic.name());
+                TopicUtils.validate(topic.name());
             } catch (InvalidTopicException e) {
                 topicErrors.put(topic.name(),
                     new ApiError(Errors.INVALID_TOPIC_EXCEPTION, e.getMessage()));
             }
-            if (Topic.hasCollisionChars(topic.name())) {
-                String normalizedName = Topic.unifyCollisionChars(topic.name());
+            if (TopicUtils.hasCollisionChars(topic.name())) {
+                String normalizedName = TopicUtils.unifyCollisionChars(topic.name());
                 Set<String> colliding = topicsWithCollisionChars.get(normalizedName);
                 if (colliding != null) {
                     topicErrors.put(topic.name(), new ApiError(Errors.INVALID_TOPIC_EXCEPTION,

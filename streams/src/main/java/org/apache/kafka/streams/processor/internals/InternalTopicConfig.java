@@ -17,7 +17,7 @@
 package org.apache.kafka.streams.processor.internals;
 
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +42,7 @@ public abstract class InternalTopicConfig {
 
     InternalTopicConfig(final String name, final Map<String, String> topicConfigs) {
         this.name = Objects.requireNonNull(name, "name can't be null");
-        Topic.validate(name);
+        TopicUtils.validate(name);
         this.topicConfigs = Objects.requireNonNull(topicConfigs, "topicConfigs can't be null");
         this.enforceNumberOfPartitions = false;
     }
@@ -52,7 +52,7 @@ public abstract class InternalTopicConfig {
                         final int numberOfPartitions,
                         final boolean enforceNumberOfPartitions) {
         this.name = Objects.requireNonNull(name, "name can't be null");
-        Topic.validate(name);
+        TopicUtils.validate(name);
         validateNumberOfPartitions(numberOfPartitions);
         this.topicConfigs = Objects.requireNonNull(topicConfigs, "topicConfigs can't be null");
         this.numberOfPartitions = Optional.of(numberOfPartitions);

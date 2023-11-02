@@ -54,7 +54,7 @@ import org.apache.kafka.common.config.{ConfigException, ConfigResource}
 import org.apache.kafka.common.config.ConfigResource.Type.TOPIC
 import org.apache.kafka.common.errors.{KafkaStorageException, OperationNotAttemptedException, TopicExistsException, UnknownTopicOrPartitionException}
 import org.apache.kafka.common.header.Header
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.memory.MemoryPool
 import org.apache.kafka.common.message.UpdateMetadataRequestData.UpdateMetadataPartitionState
 import org.apache.kafka.common.metrics.Metrics
@@ -526,7 +526,7 @@ object TestUtils extends Logging {
     val broker = brokers.head
     createTopicWithAdmin(
       admin = admin,
-      topic = Topic.GROUP_METADATA_TOPIC_NAME,
+      topic = TopicUtils.GROUP_METADATA_TOPIC_NAME,
       numPartitions = broker.config.getInt(KafkaConfig.OffsetsTopicPartitionsProp),
       replicationFactor = broker.config.getShort(KafkaConfig.OffsetsTopicReplicationFactorProp).toInt,
       brokers = brokers,
@@ -639,7 +639,7 @@ object TestUtils extends Logging {
     try {
       createTopic(
         zkClient,
-        Topic.GROUP_METADATA_TOPIC_NAME,
+        TopicUtils.GROUP_METADATA_TOPIC_NAME,
         numPartitions,
         replicationFactor,
         servers,
@@ -649,7 +649,7 @@ object TestUtils extends Logging {
       case ex: TopicExistsException =>
         val allPartitionsMetadata = waitForAllPartitionsMetadata(
           servers,
-          Topic.GROUP_METADATA_TOPIC_NAME,
+          TopicUtils.GROUP_METADATA_TOPIC_NAME,
           numPartitions
         )
 

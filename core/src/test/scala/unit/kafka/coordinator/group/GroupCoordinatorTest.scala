@@ -33,7 +33,7 @@ import kafka.cluster.Partition
 import kafka.zk.KafkaZkClient
 import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor.Subscription
 import org.apache.kafka.clients.consumer.internals.ConsumerProtocol
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.metrics.Metrics
 import org.apache.kafka.common.message.LeaveGroupRequestData.MemberIdentity
 import org.apache.kafka.server.util.timer.MockTimer
@@ -104,13 +104,13 @@ class GroupCoordinatorTest {
     props.setProperty(KafkaConfig.GroupInitialRebalanceDelayMsProp, GroupInitialRebalanceDelay.toString)
     // make two partitions of the group topic to make sure some partitions are not owned by the coordinator
     val ret = mutable.Map[String, Map[Int, Seq[Int]]]()
-    ret += (Topic.GROUP_METADATA_TOPIC_NAME -> Map(0 -> Seq(1), 1 -> Seq(1)))
+    ret += (TopicUtils.GROUP_METADATA_TOPIC_NAME -> Map(0 -> Seq(1), 1 -> Seq(1)))
 
     replicaManager = mock(classOf[ReplicaManager])
 
     zkClient = mock(classOf[KafkaZkClient])
     // make two partitions of the group topic to make sure some partitions are not owned by the coordinator
-    when(zkClient.getTopicPartitionCount(Topic.GROUP_METADATA_TOPIC_NAME)).thenReturn(Some(2))
+    when(zkClient.getTopicPartitionCount(TopicUtils.GROUP_METADATA_TOPIC_NAME)).thenReturn(Some(2))
 
     timer = new MockTimer
 
@@ -120,7 +120,7 @@ class GroupCoordinatorTest {
     val rebalancePurgatory = new DelayedOperationPurgatory[DelayedRebalance]("Rebalance", timer, config.brokerId, reaperEnabled = false)
 
     groupCoordinator = GroupCoordinator(config, replicaManager, heartbeatPurgatory, rebalancePurgatory, timer.time, new Metrics())
-    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(Topic.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
+    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(TopicUtils.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
       enableMetadataExpiration = false)
 
     // add the partition into the owned partition list
@@ -187,7 +187,7 @@ class GroupCoordinatorTest {
     assertEquals(Errors.NONE, groupCoordinator.handleDescribeGroup(groupId)._1)
 
     // After loading, we should be able to access the group
-    val otherGroupMetadataTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, otherGroupPartitionId)
+    val otherGroupMetadataTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, otherGroupPartitionId)
     when(replicaManager.getLog(otherGroupMetadataTopicPartition)).thenReturn(None)
     // Call removeGroupsAndOffsets so that partition removed from loadingPartitions
     groupCoordinator.groupManager.removeGroupsAndOffsets(otherGroupMetadataTopicPartition, OptionalInt.of(1), group => {})
@@ -1745,7 +1745,7 @@ class GroupCoordinatorTest {
     val syncGroupResult = syncGroupLeader(groupId, generationId, assignedConsumerId, Map(assignedConsumerId -> Array[Byte]()))
     assertEquals(Errors.NONE, syncGroupResult.error)
 
-    when(replicaManager.getPartition(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)))
+    when(replicaManager.getPartition(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)))
       .thenReturn(HostedPartition.None)
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.MAGIC_VALUE_V1))
 
@@ -2612,7 +2612,7 @@ class GroupCoordinatorTest {
     assertEquals(Errors.NONE, describeError)
     assertEquals(Empty.toString, summary.state)
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -2643,7 +2643,7 @@ class GroupCoordinatorTest {
     assertEquals(Errors.NONE, error)
     assertEquals(Some(OffsetFetchResponse.INVALID_OFFSET), partitionData.get(tip.topicPartition).map(_.offset))
 
-    val offsetsTopic = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val offsetsTopic = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
 
     // Send commit marker.
     handleTxnCompletion(producerId, List(offsetsTopic), TransactionResult.COMMIT)
@@ -2668,7 +2668,7 @@ class GroupCoordinatorTest {
     assertEquals(Errors.NONE, error)
     assertEquals(Some(OffsetFetchResponse.INVALID_OFFSET), partitionData.get(tip.topicPartition).map(_.offset))
 
-    val offsetsTopic = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val offsetsTopic = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
 
     // Validate that the pending commit is discarded.
     handleTxnCompletion(producerId, List(offsetsTopic), TransactionResult.ABORT)
@@ -2696,7 +2696,7 @@ class GroupCoordinatorTest {
     assertEquals(Some(OffsetFetchResponse.INVALID_OFFSET), partitionData.get(nonExistTp).map(_.offset))
     assertEquals(Some(Errors.NONE), partitionData.get(nonExistTp).map(_.error))
 
-    val offsetsTopic = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val offsetsTopic = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
 
     // Validate that the pending commit is discarded.
     handleTxnCompletion(producerId, List(offsetsTopic), TransactionResult.ABORT)
@@ -2722,7 +2722,7 @@ class GroupCoordinatorTest {
     assertEquals(Some(OffsetFetchResponse.INVALID_OFFSET), partitionData.get(tip.topicPartition).map(_.offset))
     assertEquals(Some(Errors.UNSTABLE_OFFSET_COMMIT), partitionData.get(tip.topicPartition).map(_.error))
 
-    val offsetsTopic = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val offsetsTopic = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
 
     // Validate that the pending commit is committed
     handleTxnCompletion(producerId, List(offsetsTopic), TransactionResult.COMMIT)
@@ -2747,7 +2747,7 @@ class GroupCoordinatorTest {
     assertEquals(Errors.NONE, error)
     assertEquals(Some(OffsetFetchResponse.INVALID_OFFSET), partitionData.get(tip.topicPartition).map(_.offset))
 
-    val offsetsTopic = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val offsetsTopic = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     handleTxnCompletion(producerId, List(offsetsTopic), TransactionResult.ABORT)
 
     val (secondReqError, secondReqPartitionData) = groupCoordinator.handleFetchOffsets(groupId, requireStable, Some(Seq(tip.topicPartition)))
@@ -2777,8 +2777,8 @@ class GroupCoordinatorTest {
     val producerEpoch: Short = 3
 
     val groupIds = List(groupId, otherGroupId)
-    val offsetTopicPartitions = List(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId)),
-      new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(otherGroupId)))
+    val offsetTopicPartitions = List(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId)),
+      new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(otherGroupId)))
 
     groupCoordinator.groupManager.addOwnedPartition(offsetTopicPartitions(1).partition)
     val errors = mutable.ArrayBuffer[Errors]()
@@ -2859,7 +2859,7 @@ class GroupCoordinatorTest {
     val producerIds = List(1000L, 1005L)
     val producerEpochs: Seq[Short] = List(3, 4)
 
-    val offsetTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId))
+    val offsetTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId))
 
     val errors = mutable.ArrayBuffer[Errors]()
     val partitionData = mutable.ArrayBuffer[scala.collection.Map[TopicPartition, OffsetFetchResponse.PartitionData]]()
@@ -3459,7 +3459,7 @@ class GroupCoordinatorTest {
     val leaveGroupResults = singleLeaveGroup(groupId, joinGroupResult.memberId)
     verifyLeaveGroupResult(leaveGroupResults)
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -3494,7 +3494,7 @@ class GroupCoordinatorTest {
     val leaveGroupResults = singleLeaveGroup(groupId, assignedMemberId)
     verifyLeaveGroupResult(leaveGroupResults)
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -3554,7 +3554,7 @@ class GroupCoordinatorTest {
 
     assertTrue(groupCoordinator.groupManager.getGroup(groupId).exists(_.is(Empty)))
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -3635,7 +3635,7 @@ class GroupCoordinatorTest {
 
     assertTrue(groupCoordinator.groupManager.getGroup(groupId).exists(_.is(Empty)))
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -3678,7 +3678,7 @@ class GroupCoordinatorTest {
 
     assertTrue(groupCoordinator.groupManager.getGroup(groupId).exists(_.is(Stable)))
 
-    val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+    val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
     val partition: Partition = mock(classOf[Partition])
 
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.CURRENT_MAGIC_VALUE))
@@ -3868,7 +3868,7 @@ class GroupCoordinatorTest {
       any()
     )).thenAnswer(_ => {
       capturedArgument.getValue.apply(
-        Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
+        Map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
           new PartitionResponse(appendRecordError, 0L, RecordBatch.NO_TIMESTAMP, 0L)
        )
       )
@@ -3903,7 +3903,7 @@ class GroupCoordinatorTest {
       any(),
       any())).thenAnswer(_ => {
         capturedArgument.getValue.apply(
-          Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
+          Map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
             new PartitionResponse(Errors.NONE, 0L, RecordBatch.NO_TIMESTAMP, 0L)
           )
         )
@@ -4050,7 +4050,7 @@ class GroupCoordinatorTest {
       any()
     )).thenAnswer(_ => {
       capturedArgument.getValue.apply(
-        Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
+        Map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId) ->
           new PartitionResponse(Errors.NONE, 0L, RecordBatch.NO_TIMESTAMP, 0L)
         )
       )
@@ -4087,7 +4087,7 @@ class GroupCoordinatorTest {
       any()
     )).thenAnswer(_ => {
       capturedArgument.getValue.apply(
-        Map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId)) ->
+        Map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupCoordinator.partitionFor(groupId)) ->
           new PartitionResponse(Errors.NONE, 0L, RecordBatch.NO_TIMESTAMP, 0L)
         )
       )
@@ -4114,7 +4114,7 @@ class GroupCoordinatorTest {
                               memberIdentities: List[MemberIdentity]): LeaveGroupResult = {
     val (responseFuture, responseCallback) = setupLeaveGroupCallback
 
-    when(replicaManager.getPartition(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)))
+    when(replicaManager.getPartition(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)))
       .thenReturn(HostedPartition.None)
     when(replicaManager.getMagic(any[TopicPartition])).thenReturn(Some(RecordBatch.MAGIC_VALUE_V1))
 

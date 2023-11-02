@@ -16,7 +16,7 @@
  */
 package org.apache.kafka.server.util;
 
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public abstract class TopicFilter {
 
         @Override
         public boolean isTopicAllowed(String topic, boolean excludeInternalTopics) {
-            boolean allowed = topic.matches(regex) && !(Topic.isInternal(topic) && excludeInternalTopics);
+            boolean allowed = topic.matches(regex) && !(TopicUtils.isInternal(topic) && excludeInternalTopics);
             if (allowed) {
                 log.debug("{} allowed", topic);
             } else {

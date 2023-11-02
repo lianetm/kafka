@@ -22,7 +22,7 @@ import java.util.Properties
 import kafka.utils.TestInfoUtils
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.errors.PolicyViolationException
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.protocol.Errors
 import org.apache.kafka.server.policy.CreateTopicPolicy
 import org.apache.kafka.server.policy.CreateTopicPolicy.RequestMetadata
@@ -148,7 +148,7 @@ object CreateTopicsRequestWithPolicyTest {
     }
 
     def validate(requestMetadata: RequestMetadata): Unit = {
-      if (Topic.isInternal(requestMetadata.topic())) {
+      if (TopicUtils.isInternal(requestMetadata.topic())) {
         // Do not verify internal topics
         return
       }

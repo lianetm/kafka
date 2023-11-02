@@ -23,7 +23,7 @@ import org.apache.kafka.common.config.ConfigResource
 import org.apache.kafka.common.config.ConfigResource.Type.{BROKER, TOPIC}
 import org.apache.kafka.controller.ConfigurationValidator
 import org.apache.kafka.common.errors.{InvalidConfigurationException, InvalidRequestException}
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.storage.internals.log.LogConfig
 
 import scala.collection.mutable
@@ -49,7 +49,7 @@ class ControllerConfigurationValidator(kafkaConfig: KafkaConfig) extends Configu
     if (name.isEmpty) {
       throw new InvalidRequestException("Default topic resources are not allowed.")
     }
-    Topic.validate(name)
+    TopicUtils.validate(name)
   }
 
   private def validateBrokerName(

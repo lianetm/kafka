@@ -26,8 +26,8 @@ import kafka.coordinator.transaction.TransactionCoordinator
 import kafka.utils.Logging
 import org.apache.kafka.clients.ClientResponse
 import org.apache.kafka.common.errors.InvalidTopicException
-import org.apache.kafka.common.internals.Topic
-import org.apache.kafka.common.internals.Topic.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME}
+import org.apache.kafka.common.internals.TopicUtils.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME}
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.CreateTopicsRequestData
 import org.apache.kafka.common.message.CreateTopicsRequestData.{CreatableTopic, CreateableTopicConfig, CreateableTopicConfigCollection}
 import org.apache.kafka.common.message.MetadataResponseData.MetadataResponseTopic
@@ -138,7 +138,7 @@ class DefaultAutoTopicCreationManager(
             new MetadataResponseTopic()
               .setErrorCode(error.code)
               .setName(topic)
-              .setIsInternal(Topic.isInternal(topic))
+              .setIsInternal(TopicUtils.isInternal(topic))
           }
 
         case None =>
@@ -146,7 +146,7 @@ class DefaultAutoTopicCreationManager(
             new MetadataResponseTopic()
               .setErrorCode(Errors.UNKNOWN_TOPIC_OR_PARTITION.code)
               .setName(topic)
-              .setIsInternal(Topic.isInternal(topic))
+              .setIsInternal(TopicUtils.isInternal(topic))
           }
       }
 
@@ -218,7 +218,7 @@ class DefaultAutoTopicCreationManager(
       new MetadataResponseTopic()
         .setErrorCode(Errors.UNKNOWN_TOPIC_OR_PARTITION.code)
         .setName(topic)
-        .setIsInternal(Topic.isInternal(topic))
+        .setIsInternal(TopicUtils.isInternal(topic))
     }
 
     info(s"Sent auto-creation request for ${creatableTopics.keys} to the active controller.")
@@ -266,7 +266,7 @@ class DefaultAutoTopicCreationManager(
 
   private def isValidTopicName(topic: String): Boolean = {
     try {
-      Topic.validate(topic)
+      TopicUtils.validate(topic)
       true
     } catch {
       case _: InvalidTopicException =>
@@ -296,7 +296,7 @@ class DefaultAutoTopicCreationManager(
           uncreatableTopics += new MetadataResponseTopic()
             .setErrorCode(error.code)
             .setName(topic)
-            .setIsInternal(Topic.isInternal(topic))
+            .setIsInternal(TopicUtils.isInternal(topic))
         case None =>
           creatableTopics.put(topic, creatableTopic(topic))
       }

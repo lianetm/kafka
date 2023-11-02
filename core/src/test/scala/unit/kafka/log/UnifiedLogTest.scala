@@ -24,7 +24,7 @@ import kafka.utils._
 import org.apache.kafka.common.config.TopicConfig
 import org.apache.kafka.common.{InvalidRecordException, TopicPartition, Uuid}
 import org.apache.kafka.common.errors._
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.FetchResponseData
 import org.apache.kafka.common.record.FileRecords.TimestampAndOffset
 import org.apache.kafka.common.record.MemoryRecords.RecordFilter
@@ -3605,7 +3605,7 @@ class UnifiedLogTest {
     @Test
     def testRemoteLogStorageIsDisabledOnInternalAndRemoteLogMetadataTopic(): Unit = {
       val partitions = Seq(TopicBasedRemoteLogMetadataManagerConfig.REMOTE_LOG_METADATA_TOPIC_NAME,
-        Topic.TRANSACTION_STATE_TOPIC_NAME, Topic.TRANSACTION_STATE_TOPIC_NAME)
+        TopicUtils.TRANSACTION_STATE_TOPIC_NAME, TopicUtils.TRANSACTION_STATE_TOPIC_NAME)
         .map(topic => new TopicPartition(topic, 0))
       for (partition <- partitions) {
         val logConfig = LogTestUtils.createLogConfig(remoteLogStorageEnable = true)

@@ -21,7 +21,7 @@ import kafka.server.AddPartitionsToTxnManager.{VerificationFailureRateMetricName
 import kafka.utils.Implicits.MapExtensionMethods
 import kafka.utils.Logging
 import org.apache.kafka.clients.{ClientResponse, NetworkClient, RequestCompletionHandler}
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.{Node, TopicPartition}
 import org.apache.kafka.common.message.AddPartitionsToTxnRequestData.{AddPartitionsToTxnTopic, AddPartitionsToTxnTopicCollection, AddPartitionsToTxnTransaction, AddPartitionsToTxnTransactionCollection}
 import org.apache.kafka.common.protocol.Errors
@@ -149,7 +149,7 @@ class AddPartitionsToTxnManager(
   private def getTransactionCoordinator(partition: Int): (Errors, Node) = {
     val listenerName = config.interBrokerListenerName
 
-    val topicMetadata = metadataCache.getTopicMetadata(Set(Topic.TRANSACTION_STATE_TOPIC_NAME), listenerName)
+    val topicMetadata = metadataCache.getTopicMetadata(Set(TopicUtils.TRANSACTION_STATE_TOPIC_NAME), listenerName)
 
     if (topicMetadata.headOption.isEmpty) {
       // If topic is not created, then the transaction is definitely not started.

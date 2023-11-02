@@ -27,8 +27,8 @@ import kafka.coordinator.transaction.TransactionCoordinator
 import kafka.utils.TestUtils
 import org.apache.kafka.clients.{ClientResponse, NodeApiVersions, RequestCompletionHandler}
 import org.apache.kafka.common.Node
-import org.apache.kafka.common.internals.Topic
-import org.apache.kafka.common.internals.Topic.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME}
+import org.apache.kafka.common.internals.TopicUtils.{GROUP_METADATA_TOPIC_NAME, TRANSACTION_STATE_TOPIC_NAME}
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.{ApiVersionsResponseData, CreateTopicsRequestData}
 import org.apache.kafka.common.message.CreateTopicsRequestData.CreatableTopic
 import org.apache.kafka.common.message.MetadataResponseData.MetadataResponseTopic
@@ -160,13 +160,13 @@ class AutoTopicCreationManagerTest {
   @Test
   def testInvalidReplicationFactorForConsumerOffsetsTopic(): Unit = {
     Mockito.when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.INVALID_REPLICATION_FACTOR, Topic.GROUP_METADATA_TOPIC_NAME, isInternal = true)
+    testErrorWithCreationInZk(Errors.INVALID_REPLICATION_FACTOR, TopicUtils.GROUP_METADATA_TOPIC_NAME, isInternal = true)
   }
 
   @Test
   def testInvalidReplicationFactorForTxnOffsetTopic(): Unit = {
     Mockito.when(transactionCoordinator.transactionTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.INVALID_REPLICATION_FACTOR, Topic.TRANSACTION_STATE_TOPIC_NAME, isInternal = true)
+    testErrorWithCreationInZk(Errors.INVALID_REPLICATION_FACTOR, TopicUtils.TRANSACTION_STATE_TOPIC_NAME, isInternal = true)
   }
 
   @Test
@@ -178,14 +178,14 @@ class AutoTopicCreationManagerTest {
   @Test
   def testTopicExistsErrorSwapForConsumerOffsetsTopic(): Unit = {
     Mockito.when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.TOPIC_ALREADY_EXISTS, Topic.GROUP_METADATA_TOPIC_NAME, isInternal = true,
+    testErrorWithCreationInZk(Errors.TOPIC_ALREADY_EXISTS, TopicUtils.GROUP_METADATA_TOPIC_NAME, isInternal = true,
       expectedError = Some(Errors.LEADER_NOT_AVAILABLE))
   }
 
   @Test
   def testTopicExistsErrorSwapForTxnOffsetTopic(): Unit = {
     Mockito.when(transactionCoordinator.transactionTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.TOPIC_ALREADY_EXISTS, Topic.TRANSACTION_STATE_TOPIC_NAME, isInternal = true,
+    testErrorWithCreationInZk(Errors.TOPIC_ALREADY_EXISTS, TopicUtils.TRANSACTION_STATE_TOPIC_NAME, isInternal = true,
       expectedError = Some(Errors.LEADER_NOT_AVAILABLE))
   }
 
@@ -198,14 +198,14 @@ class AutoTopicCreationManagerTest {
   @Test
   def testRequestTimeoutErrorSwapForConsumerOffsetTopic(): Unit = {
     Mockito.when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.REQUEST_TIMED_OUT, Topic.GROUP_METADATA_TOPIC_NAME, isInternal = true,
+    testErrorWithCreationInZk(Errors.REQUEST_TIMED_OUT, TopicUtils.GROUP_METADATA_TOPIC_NAME, isInternal = true,
       expectedError = Some(Errors.LEADER_NOT_AVAILABLE))
   }
 
   @Test
   def testRequestTimeoutErrorSwapForTxnOffsetTopic(): Unit = {
     Mockito.when(transactionCoordinator.transactionTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.REQUEST_TIMED_OUT, Topic.TRANSACTION_STATE_TOPIC_NAME, isInternal = true,
+    testErrorWithCreationInZk(Errors.REQUEST_TIMED_OUT, TopicUtils.TRANSACTION_STATE_TOPIC_NAME, isInternal = true,
       expectedError = Some(Errors.LEADER_NOT_AVAILABLE))
   }
 
@@ -217,13 +217,13 @@ class AutoTopicCreationManagerTest {
   @Test
   def testUnknownTopicPartitionForConsumerOffsetTopic(): Unit = {
     Mockito.when(groupCoordinator.groupMetadataTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.UNKNOWN_TOPIC_OR_PARTITION, Topic.GROUP_METADATA_TOPIC_NAME, isInternal = true)
+    testErrorWithCreationInZk(Errors.UNKNOWN_TOPIC_OR_PARTITION, TopicUtils.GROUP_METADATA_TOPIC_NAME, isInternal = true)
   }
 
   @Test
   def testUnknownTopicPartitionForTxnOffsetTopic(): Unit = {
     Mockito.when(transactionCoordinator.transactionTopicConfigs).thenReturn(new Properties)
-    testErrorWithCreationInZk(Errors.UNKNOWN_TOPIC_OR_PARTITION, Topic.TRANSACTION_STATE_TOPIC_NAME, isInternal = true)
+    testErrorWithCreationInZk(Errors.UNKNOWN_TOPIC_OR_PARTITION, TopicUtils.TRANSACTION_STATE_TOPIC_NAME, isInternal = true)
   }
 
   @Test
@@ -353,9 +353,9 @@ class AutoTopicCreationManagerTest {
     Mockito.when(controller.isActive).thenReturn(false)
     val newTopic = if (isInternal) {
       topicName match {
-        case Topic.GROUP_METADATA_TOPIC_NAME => getNewTopic(topicName,
+        case TopicUtils.GROUP_METADATA_TOPIC_NAME => getNewTopic(topicName,
           numPartitions = config.offsetsTopicPartitions, replicationFactor = config.offsetsTopicReplicationFactor)
-        case Topic.TRANSACTION_STATE_TOPIC_NAME => getNewTopic(topicName,
+        case TopicUtils.TRANSACTION_STATE_TOPIC_NAME => getNewTopic(topicName,
           numPartitions = config.transactionTopicPartitions, replicationFactor = config.transactionTopicReplicationFactor)
       }
     } else {

@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class Topic {
+public class TopicUtils {
 
     public static final String GROUP_METADATA_TOPIC_NAME = "__consumer_offsets";
     public static final String TRANSACTION_STATE_TOPIC_NAME = "__transaction_state";

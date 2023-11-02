@@ -24,7 +24,7 @@ import kafka.metrics.KafkaMetricsReporter
 import kafka.server.KafkaRaftServer.{BrokerRole, ControllerRole}
 import kafka.utils.{CoreUtils, Logging, Mx4jLoader, VerifiableProperties}
 import org.apache.kafka.common.config.{ConfigDef, ConfigResource}
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.utils.{AppInfoParser, Time}
 import org.apache.kafka.common.{KafkaException, Uuid}
 import org.apache.kafka.metadata.KafkaConfigSchema
@@ -114,8 +114,8 @@ class KafkaRaftServer(
 }
 
 object KafkaRaftServer {
-  val MetadataTopic = Topic.CLUSTER_METADATA_TOPIC_NAME
-  val MetadataPartition = Topic.CLUSTER_METADATA_TOPIC_PARTITION
+  val MetadataTopic = TopicUtils.CLUSTER_METADATA_TOPIC_NAME
+  val MetadataPartition = TopicUtils.CLUSTER_METADATA_TOPIC_PARTITION
   val MetadataTopicId = Uuid.METADATA_TOPIC_ID
 
   sealed trait ProcessRole

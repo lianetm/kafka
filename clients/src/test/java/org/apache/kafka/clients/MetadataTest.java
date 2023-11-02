@@ -26,7 +26,7 @@ import org.apache.kafka.common.Uuid;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.TopicAuthorizationException;
 import org.apache.kafka.common.internals.ClusterResourceListeners;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.MetadataResponseData;
 import org.apache.kafka.common.message.MetadataResponseData.MetadataResponseBrokerCollection;
 import org.apache.kafka.common.message.MetadataResponseData.MetadataResponsePartition;
@@ -581,7 +581,7 @@ public class MetadataTest {
         Map<String, Errors> errors = new HashMap<>();
         counts.put("topic1", 2);
         counts.put("topic2", 3);
-        counts.put(Topic.GROUP_METADATA_TOPIC_NAME, 3);
+        counts.put(TopicUtils.GROUP_METADATA_TOPIC_NAME, 3);
         errors.put("topic3", Errors.INVALID_TOPIC_EXCEPTION);
         errors.put("topic4", Errors.TOPIC_AUTHORIZATION_FAILED);
 
@@ -596,7 +596,7 @@ public class MetadataTest {
         assertEquals(cluster.invalidTopics(), Collections.singleton("topic3"));
         assertEquals(cluster.unauthorizedTopics(), Collections.singleton("topic4"));
         assertEquals(cluster.topics().size(), 3);
-        assertEquals(cluster.internalTopics(), Collections.singleton(Topic.GROUP_METADATA_TOPIC_NAME));
+        assertEquals(cluster.internalTopics(), Collections.singleton(TopicUtils.GROUP_METADATA_TOPIC_NAME));
 
         // partition counts
         assertEquals(cluster.partitionsForTopic("topic1").size(), 2);
@@ -1088,8 +1088,8 @@ public class MetadataTest {
         PartitionMetadata part2Metadata = new PartitionMetadata(Errors.NONE, partition2, Optional.of(2), Optional.of(200), Arrays.asList(2, 3), Arrays.asList(2, 3), Arrays.asList(1));
         Uuid topic2Id = Uuid.randomUuid();
 
-        Set<String> internalTopics = Collections.singleton(Topic.GROUP_METADATA_TOPIC_NAME);
-        TopicPartition internalPart = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, 0);
+        Set<String> internalTopics = Collections.singleton(TopicUtils.GROUP_METADATA_TOPIC_NAME);
+        TopicPartition internalPart = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, 0);
         Uuid internalTopicId = Uuid.randomUuid();
         PartitionMetadata internalTopicMetadata = new PartitionMetadata(Errors.NONE, internalPart, Optional.of(2), Optional.of(200), Arrays.asList(2, 3), Arrays.asList(2, 3), Arrays.asList(1));
 

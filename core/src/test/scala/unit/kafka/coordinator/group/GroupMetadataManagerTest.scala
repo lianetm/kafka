@@ -32,8 +32,8 @@ import kafka.utils.TestUtils
 import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor
 import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor.Subscription
 import org.apache.kafka.clients.consumer.internals.ConsumerProtocol
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.{TopicIdPartition, TopicPartition, Uuid}
-import org.apache.kafka.common.internals.Topic
 import org.apache.kafka.common.metrics.{JmxReporter, KafkaMetricsContext, Metrics => kMetrics}
 import org.apache.kafka.common.protocol.types.Field.TaggedFieldsSection
 import org.apache.kafka.common.protocol.types.{CompactArrayOf, Field, Schema, Struct, Type}
@@ -72,7 +72,7 @@ class GroupMetadataManagerTest {
   val groupId = "foo"
   val groupInstanceId = "bar"
   val groupPartitionId = 0
-  val groupTopicPartition = new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
+  val groupTopicPartition = new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId)
   val protocolType = "protocolType"
   val rebalanceTimeout = 60000
   val sessionTimeout = 10000
@@ -1115,7 +1115,7 @@ class GroupMetadataManagerTest {
 
     groupMetadataManager.storeGroup(group, Map.empty, callback)
     assertEquals(Some(Errors.NONE), maybeError)
-    val records = capturedRecords.getValue()(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId))
+    val records = capturedRecords.getValue()(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId))
         .records.asScala.toList
     assertEquals(1, records.size)
 
@@ -1139,7 +1139,7 @@ class GroupMetadataManagerTest {
 
     groupMetadataManager.storeGroup(group, Map.empty, callback)
     assertEquals(Some(Errors.NONE), maybeError)
-    val records = capturedRecords.getValue()(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupPartitionId))
+    val records = capturedRecords.getValue()(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupPartitionId))
       .records.asScala.toList
     assertEquals(1, records.size)
 

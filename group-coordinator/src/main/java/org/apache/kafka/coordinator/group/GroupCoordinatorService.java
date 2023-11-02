@@ -29,7 +29,7 @@ import org.apache.kafka.common.errors.RecordBatchTooLargeException;
 import org.apache.kafka.common.errors.RecordTooLargeException;
 import org.apache.kafka.common.errors.UnknownMemberIdException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.internals.Topic;
+import org.apache.kafka.common.internals.TopicUtils;
 import org.apache.kafka.common.message.ConsumerGroupHeartbeatRequestData;
 import org.apache.kafka.common.message.ConsumerGroupHeartbeatResponseData;
 import org.apache.kafka.common.message.DeleteGroupsResponseData;
@@ -246,7 +246,7 @@ public class GroupCoordinatorService implements GroupCoordinator {
     private TopicPartition topicPartitionFor(
         String groupId
     ) {
-        return new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, partitionFor(groupId));
+        return new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, partitionFor(groupId));
     }
 
     /**
@@ -868,7 +868,7 @@ public class GroupCoordinatorService implements GroupCoordinator {
     ) {
         throwIfNotActive();
         runtime.scheduleLoadOperation(
-            new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupMetadataPartitionIndex),
+            new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupMetadataPartitionIndex),
             groupMetadataPartitionLeaderEpoch
         );
     }
@@ -886,7 +886,7 @@ public class GroupCoordinatorService implements GroupCoordinator {
             throw new IllegalArgumentException("The leader epoch should always be provided in KRaft.");
         }
         runtime.scheduleUnloadOperation(
-            new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, groupMetadataPartitionIndex),
+            new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, groupMetadataPartitionIndex),
             groupMetadataPartitionLeaderEpoch.getAsInt()
         );
     }

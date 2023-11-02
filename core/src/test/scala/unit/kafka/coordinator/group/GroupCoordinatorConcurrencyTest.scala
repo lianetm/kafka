@@ -26,8 +26,8 @@ import kafka.coordinator.AbstractCoordinatorConcurrencyTest
 import kafka.coordinator.AbstractCoordinatorConcurrencyTest._
 import kafka.coordinator.group.GroupCoordinatorConcurrencyTest._
 import kafka.server.{DelayedOperationPurgatory, KafkaConfig}
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.{TopicIdPartition, TopicPartition, Uuid}
-import org.apache.kafka.common.internals.Topic
 import org.apache.kafka.common.metrics.Metrics
 import org.apache.kafka.common.message.LeaveGroupRequestData.MemberIdentity
 import org.apache.kafka.common.protocol.Errors
@@ -69,7 +69,7 @@ class GroupCoordinatorConcurrencyTest extends AbstractCoordinatorConcurrencyTest
   override def setUp(): Unit = {
     super.setUp()
 
-    when(zkClient.getTopicPartitionCount(Topic.GROUP_METADATA_TOPIC_NAME))
+    when(zkClient.getTopicPartitionCount(TopicUtils.GROUP_METADATA_TOPIC_NAME))
       .thenReturn(Some(numPartitions))
 
     serverProps.setProperty(KafkaConfig.GroupMinSessionTimeoutMsProp, ConsumerMinSessionTimeout.toString)
@@ -82,7 +82,7 @@ class GroupCoordinatorConcurrencyTest extends AbstractCoordinatorConcurrencyTest
     rebalancePurgatory = new DelayedOperationPurgatory[DelayedRebalance]("Rebalance", timer, config.brokerId, reaperEnabled = false)
 
     groupCoordinator = GroupCoordinator(config, replicaManager, heartbeatPurgatory, rebalancePurgatory, timer.time, new Metrics())
-    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(Topic.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
+    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(TopicUtils.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
       false)
   }
 
@@ -149,7 +149,7 @@ class GroupCoordinatorConcurrencyTest extends AbstractCoordinatorConcurrencyTest
       groupCoordinator.shutdown()
     groupCoordinator = GroupCoordinator(config, replicaManager, heartbeatPurgatory,
       rebalancePurgatory, timer.time, new Metrics())
-    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(Topic.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
+    groupCoordinator.startup(() => zkClient.getTopicPartitionCount(TopicUtils.GROUP_METADATA_TOPIC_NAME).getOrElse(config.offsetsTopicPartitions),
       false)
 
     val members = new Group(s"group", nMembersPerGroup, groupCoordinator, replicaManager)
@@ -304,7 +304,7 @@ class GroupCoordinatorConcurrencyTest extends AbstractCoordinatorConcurrencyTest
       // completion. Since group metadata locks are acquired for transaction completion, include
       // this in the callback to test that there are no deadlocks.
       def callbackWithTxnCompletion(errors: Map[TopicIdPartition, Errors]): Unit = {
-        val offsetsPartitions = (0 to numPartitions).map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, _))
+        val offsetsPartitions = (0 to numPartitions).map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, _))
         groupCoordinator.groupManager.scheduleHandleTxnCompletion(producerId,
           offsetsPartitions.map(_.partition).toSet, isCommit = random.nextBoolean)
         responseCallback(errors)
@@ -327,7 +327,7 @@ class GroupCoordinatorConcurrencyTest extends AbstractCoordinatorConcurrencyTest
     }
     override def runWithCallback(member: GroupMember, responseCallback: CompleteTxnCallback): Unit = {
       val producerId = 1000L
-      val offsetsPartitions = (0 to numPartitions).map(new TopicPartition(Topic.GROUP_METADATA_TOPIC_NAME, _))
+      val offsetsPartitions = (0 to numPartitions).map(new TopicPartition(TopicUtils.GROUP_METADATA_TOPIC_NAME, _))
       lock.foreach(_.lock())
       try {
         groupCoordinator.groupManager.handleTxnCompletion(producerId,

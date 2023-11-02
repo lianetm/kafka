@@ -22,7 +22,7 @@ import org.apache.kafka.common._
 import org.apache.kafka.common.acl._
 import org.apache.kafka.common.config.internals.QuotaConfigs
 import org.apache.kafka.common.config.{ConfigResource, TopicConfig}
-import org.apache.kafka.common.internals.Topic
+import org.apache.kafka.common.internals.TopicUtils
 import org.apache.kafka.common.message.CreatePartitionsRequestData.CreatePartitionsTopic
 import org.apache.kafka.common.message.CreateTopicsRequestData.{CreatableTopic, CreatableTopicCollection}
 import org.apache.kafka.common.message.JoinGroupRequestData.JoinGroupRequestProtocolCollection
@@ -659,7 +659,7 @@ class RequestQuotaTest extends BaseRequestTest {
 
         case ApiKeys.DESCRIBE_QUORUM =>
           new DescribeQuorumRequest.Builder(DescribeQuorumRequest.singletonRequest(
-            Topic.CLUSTER_METADATA_TOPIC_PARTITION))
+            TopicUtils.CLUSTER_METADATA_TOPIC_PARTITION))
 
         case ApiKeys.ALTER_PARTITION =>
           new AlterPartitionRequest.Builder(new AlterPartitionRequestData(), true)

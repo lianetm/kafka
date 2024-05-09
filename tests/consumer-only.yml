@@ -1,0 +1,23 @@
+consumer_group_command_test:
+  - kafkatest/tests/core/consumer_group_command_test.py
+
+consume_bench_test:
+  - kafkatest/tests/core/consume_bench_test.py
+
+consumer_test:
+  - kafkatest/tests/client/consumer_test.py
+
+fetch_from_follower_test:
+  - kafkatest/tests/core/fetch_from_follower_test.py
+
+reassign_partitions_test:
+  - kafkatest/tests/core/reassign_partitions_test.py
+
+snapshot_test:
+  - kafkatest/tests/core/snapshot_test.py
+
+transactions_test:
+  - kafkatest/tests/core/transactions_test.py
+
+replication_replica_failure_test:
+  - kafkatest/tests/core/replication_replica_failure_test.py

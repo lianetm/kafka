@@ -19,7 +19,6 @@ package org.apache.kafka.clients.consumer.internals;
 import org.apache.kafka.clients.Metadata.LeaderAndEpoch;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
-import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -30,7 +29,6 @@ import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.clients.consumer.RetriableCommitFailedException;
-import org.apache.kafka.clients.consumer.RoundRobinAssignor;
 import org.apache.kafka.clients.consumer.internals.events.ApplicationEvent;
 import org.apache.kafka.clients.consumer.internals.events.ApplicationEventHandler;
 import org.apache.kafka.clients.consumer.internals.events.AssignmentChangeEvent;
@@ -205,7 +203,6 @@ public class AsyncKafkaConsumerTest {
         ConsumerInterceptors<String, String> interceptors,
         ConsumerRebalanceListenerInvoker rebalanceListenerInvoker,
         SubscriptionState subscriptions,
-        List<ConsumerPartitionAssignor> assignors,
         String groupId,
         String clientId) {
         long retryBackoffMs = 100L;
@@ -228,7 +225,6 @@ public class AsyncKafkaConsumerTest {
             metadata,
             retryBackoffMs,
             defaultApiTimeoutMs,
-            assignors,
             groupId,
             autoCommitEnabled);
     }
@@ -564,7 +560,6 @@ public class AsyncKafkaConsumerTest {
             new ConsumerInterceptors<>(Collections.emptyList()),
             mock(ConsumerRebalanceListenerInvoker.class),
             subscriptions,
-            singletonList(new RoundRobinAssignor()),
             "group-id",
             "client-id");
         completeCommitSyncApplicationEventSuccessfully();
@@ -784,7 +779,6 @@ public class AsyncKafkaConsumerTest {
             mock(ConsumerInterceptors.class),
             mock(ConsumerRebalanceListenerInvoker.class),
             subscriptions,
-            singletonList(new RoundRobinAssignor()),
             "group-id",
             "client-id");
 
@@ -806,7 +800,6 @@ public class AsyncKafkaConsumerTest {
             new ConsumerInterceptors<>(Collections.emptyList()),
             mock(ConsumerRebalanceListenerInvoker.class),
             subscriptions,
-            singletonList(new RoundRobinAssignor()),
             "group-id",
             "client-id");
         subscriptions.subscribe(singleton("topic"), Optional.of(listener));
@@ -844,7 +837,6 @@ public class AsyncKafkaConsumerTest {
             mock(ConsumerInterceptors.class),
             mock(ConsumerRebalanceListenerInvoker.class),
             subscriptions,
-            singletonList(new RoundRobinAssignor()),
             "group-id",
             "client-id");
         consumer.subscribe(singleton("topic"), mock(ConsumerRebalanceListener.class));
@@ -862,7 +854,6 @@ public class AsyncKafkaConsumerTest {
             mock(ConsumerInterceptors.class),
             mock(ConsumerRebalanceListenerInvoker.class),
             subscriptions,
-            singletonList(new RoundRobinAssignor()),
             "group-id",
             "client-id");
         consumer.subscribe(singleton("topic"), mock(ConsumerRebalanceListener.class));
@@ -1560,18 +1551,6 @@ public class AsyncKafkaConsumerTest {
     }
 
     @Test
-    public void testGroupRemoteAssignorUnusedInGenericProtocol() {
-        final Properties props = requiredConsumerConfig();
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "consumerGroupA");
-        props.put(ConsumerConfig.GROUP_PROTOCOL_CONFIG, GroupProtocol.CLASSIC.name().toLowerCase(Locale.ROOT));
-        props.put(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG, "someAssignor");
-        final ConsumerConfig config = new ConsumerConfig(props);
-        consumer = newConsumer(config);
-
-        assertTrue(config.unused().contains(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG));
-    }
-
-    @Test
     public void testGroupRemoteAssignorUsedInConsumerProtocol() {
         final Properties props = requiredConsumerConfig();
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "consumerGroupA");
@@ -1625,7 +1604,6 @@ public class AsyncKafkaConsumerTest {
                 new ConsumerInterceptors<>(Collections.emptyList()),
                 mock(ConsumerRebalanceListenerInvoker.class),
                 subscriptions,
-                singletonList(new RoundRobinAssignor()),
                 "group-id",
                 "client-id");
         final TopicPartition tp = new TopicPartition("topic", 0);

@@ -144,9 +144,10 @@ import static org.apache.kafka.common.utils.Utils.swallow;
  *
  * <p/>
  *
- * This class should not be invoked directly; users should instead create a {@link KafkaConsumer},
- * and that will internally instantiate this if the new consumer protocol is enabled, or the
- * {@link LegacyKafkaConsumer} if the classic protocol is enabled.
+ * This class should not be invoked directly; users should instead create a {@link KafkaConsumer}.
+ * Internally, it will create a new instance of this {@link AsyncKafkaConsumer} if the new
+ * consumer protocol is enabled, or an instance of {@link LegacyKafkaConsumer} if the classic
+ * protocol is enabled.
  *
  * <p/>
  *

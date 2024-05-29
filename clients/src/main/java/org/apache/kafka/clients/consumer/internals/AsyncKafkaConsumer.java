@@ -26,10 +26,8 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
-import org.apache.kafka.clients.consumer.ConsumerPartitionAssignor;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.GroupProtocol;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.NoOffsetForPartitionException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -141,17 +139,22 @@ import static org.apache.kafka.common.utils.Utils.isBlank;
 import static org.apache.kafka.common.utils.Utils.swallow;
 
 /**
- * This {@link Consumer} implementation uses an {@link ApplicationEventHandler event handler} to process
- * {@link ApplicationEvent application events} so that the network I/O can be processed in a dedicated
- * {@link ConsumerNetworkThread network thread}. Visit
- * <a href="https://cwiki.apache.org/confluence/display/KAFKA/Consumer+threading+refactor+design">this document</a>
- * for implementation detail.
+ * Internal implementation of the {@link Consumer} that supports the new consumer rebalance
+ * protocol only (KIP-848).
  *
  * <p/>
  *
- * <em>Note:</em> this {@link Consumer} implementation is part of the revised consumer group protocol from KIP-848.
- * This class should not be invoked directly; users should instead create a {@link KafkaConsumer} as before.
- * This consumer implements the new consumer group protocol and is intended to be the default in coming releases.
+ * This class should not be invoked directly; users should instead create a {@link KafkaConsumer},
+ * and that will internally instantiate this if the new consumer protocol is enabled, or the
+ * {@link LegacyKafkaConsumer} if the classic protocol is enabled.
+ *
+ * <p/>
+ *
+ * This implementation uses an {@link ApplicationEventHandler event handler} to process
+ * {@link ApplicationEvent application events} so that the network I/O can be processed in a dedicated
+ * {@link ConsumerNetworkThread network thread}. Visit
+ * <a href="https://cwiki.apache.org/confluence/display/KAFKA/Consumer+threading+refactor+design">this document</a>
+ * for implementation details.
  */
 public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
 
@@ -240,7 +243,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
     private final int defaultApiTimeoutMs;
     private final boolean autoCommitEnabled;
     private volatile boolean closed = false;
-    private final List<ConsumerPartitionAssignor> assignors;
     private final Optional<ClientTelemetryReporter> clientTelemetryReporter;
 
     // to keep from repeatedly scanning subscriptions in poll(), cache the result during metadata updates
@@ -373,10 +375,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
                     rebalanceListenerInvoker
             );
             this.backgroundEventReaper = backgroundEventReaperFactory.build(logContext);
-            this.assignors = ConsumerPartitionAssignor.getAssignorInstances(
-                    config.getList(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG),
-                    config.originals(Collections.singletonMap(ConsumerConfig.CLIENT_ID_CONFIG, clientId))
-            );
 
             // The FetchCollector is only used on the application thread.
             this.fetchCollector = fetchCollectorFactory.build(logContext,
@@ -389,8 +387,7 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
 
             this.kafkaConsumerMetrics = new KafkaConsumerMetrics(metrics, CONSUMER_METRIC_GROUP_PREFIX);
 
-            if (groupMetadata.get().isPresent() &&
-                GroupProtocol.of(config.getString(ConsumerConfig.GROUP_PROTOCOL_CONFIG)) == GroupProtocol.CONSUMER) {
+            if (groupMetadata.get().isPresent()) {
                 config.ignore(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG); // Used by background thread
             }
             config.logUnused();
@@ -424,7 +421,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
                        ConsumerMetadata metadata,
                        long retryBackoffMs,
                        int defaultApiTimeoutMs,
-                       List<ConsumerPartitionAssignor> assignors,
                        String groupId,
                        boolean autoCommitEnabled) {
         this.log = logContext.logger(getClass());
@@ -445,7 +441,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
         this.defaultApiTimeoutMs = defaultApiTimeoutMs;
         this.deserializers = deserializers;
         this.applicationEventHandler = applicationEventHandler;
-        this.assignors = assignors;
         this.kafkaConsumerMetrics = new KafkaConsumerMetrics(metrics, "consumer");
         this.clientTelemetryReporter = Optional.empty();
         this.autoCommitEnabled = autoCommitEnabled;
@@ -460,8 +455,7 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
                        Deserializer<V> valueDeserializer,
                        KafkaClient client,
                        SubscriptionState subscriptions,
-                       ConsumerMetadata metadata,
-                       List<ConsumerPartitionAssignor> assignors) {
+                       ConsumerMetadata metadata) {
         this.log = logContext.logger(getClass());
         this.subscriptions = subscriptions;
         this.clientId = config.getString(ConsumerConfig.CLIENT_ID_CONFIG);
@@ -475,7 +469,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
         this.retryBackoffMs = config.getLong(ConsumerConfig.RETRY_BACKOFF_MS_CONFIG);
         this.defaultApiTimeoutMs = config.getInt(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG);
         this.deserializers = new Deserializers<>(keyDeserializer, valueDeserializer);
-        this.assignors = assignors;
         this.clientTelemetryReporter = Optional.empty();
 
         ConsumerMetrics metricsRegistry = new ConsumerMetrics(CONSUMER_METRIC_GROUP_PREFIX);
@@ -1679,12 +1672,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
         }
     }
 
-    private void throwIfNoAssignorsConfigured() {
-        if (assignors.isEmpty())
-            throw new IllegalStateException("Must configure at least one partition assigner class name to " +
-                    ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG + " configuration property");
-    }
-
     private void updateLastSeenEpochIfNewer(TopicPartition topicPartition, OffsetAndMetadata offsetAndMetadata) {
         if (offsetAndMetadata != null)
             offsetAndMetadata.leaderEpoch().ifPresent(epoch -> metadata.updateLastSeenEpochIfNewer(topicPartition, epoch));
@@ -1772,7 +1759,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
             if (pattern == null || pattern.toString().isEmpty())
                 throw new IllegalArgumentException("Topic pattern to subscribe to cannot be " + (pattern == null ?
                     "null" : "empty"));
-            throwIfNoAssignorsConfigured();
             log.info("Subscribed to pattern: '{}'", pattern);
             subscriptions.subscribe(pattern, listener);
             metadata.requestUpdateForNewTopics();
@@ -1796,8 +1782,6 @@ public class AsyncKafkaConsumer<K, V> implements ConsumerDelegate<K, V> {
                     if (isBlank(topic))
                         throw new IllegalArgumentException("Topic collection to subscribe to cannot contain null or empty topic");
                 }
-
-                throwIfNoAssignorsConfigured();
 
                 // Clear the buffered data which are not a part of newly assigned topics
                 final Set<TopicPartition> currentTopicPartitions = new HashSet<>();

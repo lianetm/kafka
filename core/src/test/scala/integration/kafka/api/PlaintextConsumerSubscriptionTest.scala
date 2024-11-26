@@ -179,6 +179,34 @@ class PlaintextConsumerSubscriptionTest extends AbstractConsumerTest {
   }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
+  @MethodSource(Array("getTestQuorumAndGroupProtocolParametersConsumerGroupProtocolOnly"))
+  def testRe2JPatternSubscription(quorum: String, groupProtocol: String): Unit = {
+    val topic1 = "tblablac" // matches subscribed pattern
+    createTopic(topic1, 2, brokerCount)
+
+    val topic2 = "tblablak" // does not match subscribed pattern
+    createTopic(topic2, 2, brokerCount)
+
+    val topic3 = "tblab1" // does not match subscribed pattern
+    createTopic(topic3, 2, brokerCount)
+
+    val consumer = createConsumer()
+    assertEquals(0, consumer.assignment().size)
+
+    val pattern = new SubscriptionPattern("t.*c")
+    consumer.subscribe(pattern, new TestConsumerReassignmentListener)
+
+    val assignment = Set(
+      new TopicPartition(topic, 0),
+      new TopicPartition(topic, 1),
+      new TopicPartition(topic1, 0),
+      new TopicPartition(topic1, 1))
+    awaitAssignment(consumer, assignment)
+    consumer.unsubscribe()
+    assertEquals(0, consumer.assignment().size)
+  }
+
+  @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)
   @MethodSource(Array("getTestQuorumAndGroupProtocolParametersAll"))
   def testExpandingTopicSubscriptions(quorum: String, groupProtocol: String): Unit = {
     val otherTopic = "other"

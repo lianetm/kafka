@@ -53,7 +53,7 @@ public class ConsumerGroupHeartbeatRequest extends AbstractRequest {
         }
 
         public Builder(ConsumerGroupHeartbeatRequestData data, boolean enableUnstableLastVersion) {
-            super(ApiKeys.CONSUMER_GROUP_HEARTBEAT, enableUnstableLastVersion);
+            super(ApiKeys.CONSUMER_GROUP_HEARTBEAT, true);
             this.data = data;
         }
 

@@ -193,10 +193,10 @@ class PlaintextConsumerSubscriptionTest extends AbstractConsumerTest {
     val consumer = createConsumer()
     assertEquals(0, consumer.assignment().size)
 
-    val pattern = new SubscriptionPattern("t.*c")
+    var pattern = new SubscriptionPattern("t.*c")
     consumer.subscribe(pattern)
 
-    val assignment = Set(
+    var assignment = Set(
       new TopicPartition(topic, 0),
       new TopicPartition(topic, 1),
       new TopicPartition(topic1, 0),
@@ -204,6 +204,15 @@ class PlaintextConsumerSubscriptionTest extends AbstractConsumerTest {
     awaitAssignment(consumer, assignment)
     consumer.unsubscribe()
     assertEquals(0, consumer.assignment().size)
+
+    // Subscribe to a different pattern to match topic2 (that did not match in previous pattern)
+    pattern = new SubscriptionPattern(topic2 + ".*")
+    consumer.subscribe(pattern)
+
+    assignment = Set(
+      new TopicPartition(topic2, 0),
+      new TopicPartition(topic2, 1))
+    awaitAssignment(consumer, assignment)
   }
 
   @ParameterizedTest(name = TestInfoUtils.TestWithParameterizedQuorumAndGroupProtocolNames)

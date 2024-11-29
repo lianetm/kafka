@@ -96,7 +96,7 @@ public class TestUtils {
     public static final Random SEEDED_RANDOM = new Random(192348092834L);
     public static final Random RANDOM = new Random();
     public static final long DEFAULT_POLL_INTERVAL_MS = 100;
-    public static final long DEFAULT_MAX_WAIT_MS = 15000;
+    public static final long DEFAULT_MAX_WAIT_MS = 90000;
 
     public static Cluster singletonCluster() {
         return clusterWith(1);

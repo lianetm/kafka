@@ -2573,6 +2573,11 @@ public class GroupMetadataManager {
         }
 
         requireRefresh |= subscribedRegularExpressions.size() != group.numResolvedRegularExpressions();
+        log.info("Checking if group has unresolved regexes?: {} " +
+                "\n\tsubscribedRegularExpressions {} " +
+                "\n\tgroup.resolvedRegularExpressions {}",
+            (requireRefresh && !subscribedRegularExpressions.isEmpty()), subscribedRegularExpressions,
+            group.resolvedRegularExpressions().entrySet().stream().map(entry -> entry.getKey() + " " + entry.getValue()).collect(Collectors.toList()));
 
         // 4. The metadata has new topics that we must consider.
         requireRefresh |= group.lastResolvedRegularExpressionVersion() < lastMetadataImageWithNewTopics;
@@ -2815,6 +2820,10 @@ public class GroupMetadataManager {
         if (!updatedMember.equals(member)) {
             records.add(newConsumerGroupCurrentAssignmentRecord(groupId, updatedMember));
 
+            log.info("[GroupId {}] Member {} new assignment state: epoch={}, previousEpoch={}, state={}, "
+                    + "assignedPartitions={} and revokedPartitions={}.",
+                groupId, updatedMember.memberId(), updatedMember.memberEpoch(), updatedMember.previousMemberEpoch(), updatedMember.state(),
+                assignmentToString(updatedMember.assignedPartitions()), assignmentToString(updatedMember.partitionsPendingRevocation()));
             if (log.isDebugEnabled()) {
                 log.debug("[GroupId {}] Member {} new assignment state: epoch={}, previousEpoch={}, state={}, "
                         + "assignedPartitions={} and revokedPartitions={}.",

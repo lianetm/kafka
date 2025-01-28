@@ -159,8 +159,15 @@ public abstract class AbstractHeartbeatRequestManager<R extends AbstractResponse
      */
     @Override
     public NetworkClientDelegate.PollResult poll(long currentTimeMs) {
-        if (coordinatorRequestManager.coordinator().isEmpty() || membershipManager().shouldSkipHeartbeat()) {
-            membershipManager().onHeartbeatRequestSkipped();
+        if (membershipManager().shouldSkipHeartbeat()) {
+            return NetworkClientDelegate.PollResult.EMPTY;
+        }
+        if (coordinatorRequestManager.coordinator().isEmpty()) {
+            if (membershipManager().state == MemberState.LEAVING) {
+                logger.warn("Member {} with epoch {} cannot send leave group request because the coordinator is " +
+                        "not known/available.", membershipManager().memberId, membershipManager().memberEpoch);
+                membershipManager().completeLeaveGroup();
+            }
             return NetworkClientDelegate.PollResult.EMPTY;
         }
         pollTimer.update(currentTimeMs);

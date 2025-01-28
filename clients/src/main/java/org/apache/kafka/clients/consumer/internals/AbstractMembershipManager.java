@@ -377,16 +377,14 @@ public abstract class AbstractMembershipManager<R extends AbstractResponse> impl
             // (that is not part of the group anymore from the broker point of view) will stop
             // sending heartbeats while it completes the ongoing leaving operation.
             transitionToSendingLeaveGroup(false);
-            transitionTo(MemberState.UNSUBSCRIBED);
-            maybeCompleteLeaveInProgress();
+            completeLeaveGroup();
             return;
         }
 
         if (state == MemberState.LEAVING) {
             log.debug("Member {} with epoch {} got fenced before sending leave group heartbeat. " +
                     "It will not send the leave request and won't attempt to rejoin.", memberId, memberEpoch);
-            transitionTo(MemberState.UNSUBSCRIBED);
-            maybeCompleteLeaveInProgress();
+            completeLeaveGroup();
             return;
         }
         if (state == MemberState.UNSUBSCRIBED) {
@@ -705,14 +703,9 @@ public abstract class AbstractMembershipManager<R extends AbstractResponse> impl
      * This will ensure that the member is not blocked on {@link MemberState#LEAVING} (best
      * effort to send the request, without any response handling or retry logic)
      */
-    public void onHeartbeatRequestSkipped() {
-        if (state == MemberState.LEAVING) {
-            log.warn("Heartbeat to leave group cannot be sent (most probably due to coordinator " +
-                    "not known/available). Member {} with epoch {} will transition to {}.",
-                memberId, memberEpoch, MemberState.UNSUBSCRIBED);
-            transitionTo(MemberState.UNSUBSCRIBED);
-            maybeCompleteLeaveInProgress();
-        }
+    public void completeLeaveGroup() {
+        transitionTo(MemberState.UNSUBSCRIBED);
+        maybeCompleteLeaveInProgress();
     }
 
     /**
@@ -799,8 +792,8 @@ public abstract class AbstractMembershipManager<R extends AbstractResponse> impl
             return;
         }
         if (reconciliationInProgress) {
-            log.trace("Ignoring reconciliation attempt. Another reconciliation is already in progress. Assignment " +
-                currentTargetAssignment + " will be handled in the next reconciliation loop.");
+            log.trace("Ignoring reconciliation attempt. Another reconciliation is already in progress. " +
+                    "Assignment {} will be handled in the next reconciliation loop.", currentTargetAssignment);
             return;
         }
 
@@ -955,7 +948,7 @@ public abstract class AbstractMembershipManager<R extends AbstractResponse> impl
             String reason = rejoinedWhileReconciliationInProgress ?
                 "the member has re-joined the group" :
                 "the member already transitioned out of the reconciling state into " + state;
-            log.info("Interrupting reconciliation that is not relevant anymore because " + reason);
+            log.info("Interrupting reconciliation that is not relevant anymore because {}", reason);
             markReconciliationCompleted();
         }
         return shouldAbort;

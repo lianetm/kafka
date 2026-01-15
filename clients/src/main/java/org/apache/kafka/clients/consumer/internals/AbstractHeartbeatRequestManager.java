@@ -26,8 +26,10 @@ import org.apache.kafka.clients.consumer.internals.events.ErrorEvent;
 import org.apache.kafka.clients.consumer.internals.metrics.HeartbeatMetricsManager;
 import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.errors.RetriableException;
+import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.requests.AbstractResponse;
+import org.apache.kafka.common.requests.ConsumerGroupHeartbeatResponse;
 import org.apache.kafka.common.utils.LogContext;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.common.utils.Timer;
@@ -287,6 +289,7 @@ public abstract class AbstractHeartbeatRequestManager<R extends AbstractResponse
         return request;
     }
 
+    int dropped = 0;
     @SuppressWarnings("unchecked")
     private NetworkClientDelegate.UnsentRequest makeHeartbeatRequest(final boolean ignoreResponse) {
         NetworkClientDelegate.UnsentRequest request = buildHeartbeatRequest();
@@ -297,6 +300,17 @@ public abstract class AbstractHeartbeatRequestManager<R extends AbstractResponse
                 long completionTimeMs = request.handler().completionTimeMs();
                 if (response != null) {
                     metricsManager.recordRequestLatency(response.requestLatencyMs());
+                    // Drop response once if it includes an epoch bump > 0, to force fencing the member
+                    if (dropped == 0 &&
+                            membershipManager().memberEpoch() > 0 &&
+                            ((ConsumerGroupHeartbeatResponse) response.responseBody()).data().memberEpoch() != membershipManager().memberEpoch()
+                    ) {
+                        System.out.println("==========");
+                        System.out.println("Dropping one HB response that included epoch bump to " + ((ConsumerGroupHeartbeatResponse) response.responseBody()).data().memberEpoch());
+                        dropped++;
+                        onFailure(new TimeoutException(""), completionTimeMs);
+                        return;
+                    }
                     onResponse((R) response.responseBody(), completionTimeMs);
                 } else {
                     onFailure(exception, completionTimeMs);
@@ -322,7 +336,15 @@ public abstract class AbstractHeartbeatRequestManager<R extends AbstractResponse
 
     private void onFailure(final Throwable exception, final long responseTimeMs) {
         this.heartbeatRequestState.onFailedAttempt(responseTimeMs);
-        resetHeartbeatState();
+        if (dropped++ == 1) {
+            // Just repeat the same HB as before (not a full one, as we normally do upon failures)
+            // This reproduces the case of hitting a FencedEpoch after a dropped response
+            // (FencedEpoch because dup HB contains previous epoch and null partitions, not a subset)
+            System.out.println("Forcing duplicated HB (not full one) after dropping a response");
+            System.out.println("==========");
+        } else {
+            resetHeartbeatState();
+        }
         if (exception instanceof RetriableException) {
             coordinatorRequestManager.handleCoordinatorDisconnect(exception, responseTimeMs);
             String message = String.format("%s failed because of the retriable exception. Will retry in %s ms: %s",

@@ -36,3 +36,9 @@ Configuration:
 
       - name: org.apache.kafka
         level: WARN
+
+      - name: org.apache.kafka.coordinator.group.GroupMetadataManager
+        level: DEBUG
+
+      - name: org.apache.kafka.clients.consumer.internals.ConsumerHeartbeatRequestManager
+        level: DEBUG

@@ -339,6 +339,44 @@ public class PlaintextConsumerSubscriptionTest {
         }
     }
 
+    // Triggers fenced epoch path.
+    // Continuously fails with FENCED_MEMBER_EPOCH without the recent fix to allow fenced member to rejoin
+    // Succeeds with the fix.
+    @ClusterTest
+    public void testConsumerRecoversFromFencedEpoch() throws InterruptedException {
+        Map<String, Object> config = Map.of(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));
+        try (Consumer<byte[], byte[]> consumer = cluster.consumer(config)) {
+            var topic1 = "topic1"; // matches subscribed pattern
+            cluster.createTopic(topic1, 2, (short) BROKER_COUNT);
+            assertEquals(0, consumer.assignment().size());
+
+            consumer.subscribe(List.of(topic, topic1));
+
+            Set<TopicPartition> assignment = Set.of(
+                    new TopicPartition(topic, 0),
+                    new TopicPartition(topic, 1),
+                    new TopicPartition(topic1, 0),
+                    new TopicPartition(topic1, 1)
+            );
+            awaitAssignment(consumer, assignment);
+
+            // FencedEpoch injected internally on this step, simulating a HB response lost + resending dup HB (not full one as expected upon failure)
+            consumer.subscribe(List.of(topic1));
+            assignment = Set.of(
+                    new TopicPartition(topic1, 0),
+                    new TopicPartition(topic1, 1)
+            );
+            awaitAssignment(consumer, assignment);
+
+            // consumer should recover from the FencedEpoch automatically and consume
+            var totalRecords = 10;
+            var startingTimestamp = System.currentTimeMillis();
+            var tp = new TopicPartition(topic1, 0);
+            sendRecords(cluster, tp, totalRecords, startingTimestamp);
+            consumeAndVerifyRecords(consumer, tp, totalRecords, 0, 0, startingTimestamp);
+        }
+    }
+
     @ClusterTest
     public void testAsyncConsumerRe2JPatternExpandSubscription() throws InterruptedException {
         Map<String, Object> config = Map.of(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));

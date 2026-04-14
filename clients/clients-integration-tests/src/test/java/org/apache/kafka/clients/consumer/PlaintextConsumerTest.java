@@ -1880,6 +1880,94 @@ public class PlaintextConsumerTest {
         }, "Metrics for removed partitions should be cleaned up");
     }
 
+
+    @ClusterTest(serverProperties = {
+        @ClusterConfigProperty(key = CONSUMER_GROUP_ASSIGNMENT_INTERVAL_MS_CONFIG, value = "0"),
+        @ClusterConfigProperty(key = "group.consumer.assignors", value = "uniform,range,canary")
+    })
+    public void testCanaryAssignorTrafficSplit() throws Exception {
+        var canaryTopic = "canary-test-topic";
+        var numPartitions = 20;
+        var groupId = "canary-test-group";
+
+        cluster.createTopic(canaryTopic, numPartitions, (short) BROKER_COUNT);
+
+        // Consumer configs - one canary, three regular
+        Map<String, Object> canaryConfig = new HashMap<>();
+        canaryConfig.put(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));
+        canaryConfig.put(GROUP_ID_CONFIG, groupId);
+        canaryConfig.put(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG, "canary");
+        canaryConfig.put("client.rack", "canary");
+
+        Map<String, Object> regularConfig1 = new HashMap<>();
+        regularConfig1.put(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));
+        regularConfig1.put(GROUP_ID_CONFIG, groupId);
+        regularConfig1.put(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG, "canary");
+        regularConfig1.put("client.rack", "us-east-1a");
+
+        Map<String, Object> regularConfig2 = new HashMap<>();
+        regularConfig2.put(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));
+        regularConfig2.put(GROUP_ID_CONFIG, groupId);
+        regularConfig2.put(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG, "canary");
+        regularConfig2.put("client.rack", "us-east-1b");
+
+        Map<String, Object> regularConfig3 = new HashMap<>();
+        regularConfig3.put(GROUP_PROTOCOL_CONFIG, GroupProtocol.CONSUMER.name().toLowerCase(Locale.ROOT));
+        regularConfig3.put(GROUP_ID_CONFIG, groupId);
+        regularConfig3.put(ConsumerConfig.GROUP_REMOTE_ASSIGNOR_CONFIG, "canary");
+        regularConfig3.put("client.rack", "us-east-1c");
+
+        try (Consumer<byte[], byte[]> canaryConsumer = cluster.consumer(canaryConfig);
+             Consumer<byte[], byte[]> regularConsumer1 = cluster.consumer(regularConfig1);
+             Consumer<byte[], byte[]> regularConsumer2 = cluster.consumer(regularConfig2);
+             Consumer<byte[], byte[]> regularConsumer3 = cluster.consumer(regularConfig3)
+        ) {
+            // Subscribe all consumers first before any polling
+            // This helps ensure they all join the group at roughly the same time
+            canaryConsumer.subscribe(List.of(canaryTopic));
+            regularConsumer1.subscribe(List.of(canaryTopic));
+            regularConsumer2.subscribe(List.of(canaryTopic));
+            regularConsumer3.subscribe(List.of(canaryTopic));
+
+            // Wait for assignment to stabilize - all 4 consumers should have an assignment
+            // and total partitions should be distributed
+            TestUtils.waitForCondition(() -> {
+                canaryConsumer.poll(Duration.ofMillis(100));
+                regularConsumer1.poll(Duration.ofMillis(100));
+                regularConsumer2.poll(Duration.ofMillis(100));
+                regularConsumer3.poll(Duration.ofMillis(100));
+
+                int canaryCount = canaryConsumer.assignment().size();
+                int regularCount = regularConsumer1.assignment().size()
+                    + regularConsumer2.assignment().size()
+                    + regularConsumer3.assignment().size();
+                int totalAssigned = canaryCount + regularCount;
+
+                // Wait until all partitions are assigned AND canary has the expected 10% (2 partitions)
+                // This ensures the group has rebalanced to include all 4 consumers
+                return totalAssigned == numPartitions && canaryCount == 2 && regularCount == 18;
+            }, 60000, "Timed out waiting for canary assignment to stabilize with expected split (2 canary, 18 regular)");
+
+            // Verify final assignment
+            int canaryPartitions = canaryConsumer.assignment().size();
+            int regularPartitions = regularConsumer1.assignment().size()
+                + regularConsumer2.assignment().size()
+                + regularConsumer3.assignment().size();
+
+            // Canary should get ~10% = 2 partitions
+            assertEquals(2, canaryPartitions,
+                "Canary consumer should get approximately 10% of partitions (2 out of 20)");
+
+            // Regular consumers should get the rest
+            assertEquals(18, regularPartitions,
+                "Regular consumers should get 90% of partitions (18 out of 20)");
+
+            // Verify total is correct
+            assertEquals(numPartitions, canaryPartitions + regularPartitions,
+                "Total assigned partitions should equal topic partition count");
+        }
+    }
+
     public static class SerializerImpl implements Serializer<byte[]> {
         private final ByteArraySerializer serializer = new ByteArraySerializer();
 

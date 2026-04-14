@@ -25,6 +25,7 @@ import org.apache.kafka.common.record.internal.Records;
 import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.coordinator.group.api.assignor.ConsumerGroupPartitionAssignor;
 import org.apache.kafka.coordinator.group.api.assignor.ShareGroupPartitionAssignor;
+import org.apache.kafka.coordinator.group.assignor.CanaryAssignor;
 import org.apache.kafka.coordinator.group.assignor.RangeAssignor;
 import org.apache.kafka.coordinator.group.assignor.SimpleAssignor;
 import org.apache.kafka.coordinator.group.assignor.UniformAssignor;
@@ -211,7 +212,8 @@ public class GroupCoordinatorConfig {
 
     private static final List<ConsumerGroupPartitionAssignor> CONSUMER_GROUP_BUILTIN_ASSIGNORS = List.of(
         new UniformAssignor(),
-        new RangeAssignor()
+        new RangeAssignor(),
+        new CanaryAssignor()
     );
     public static final String CONSUMER_GROUP_ASSIGNORS_CONFIG = "group.consumer.assignors";
     public static final String CONSUMER_GROUP_ASSIGNORS_DOC = "The server side assignors as a list of either names for builtin assignors or full class names for customer assignors. " +

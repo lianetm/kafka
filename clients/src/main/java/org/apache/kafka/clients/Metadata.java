@@ -515,6 +515,11 @@ public class Metadata implements Closeable {
             if (metadata.isInternal())
                 internalTopics.add(topicName);
 
+            // If the topic was deleted and re-created (its topic ID changed), purge all last-seen leader
+            // epochs for the topic. This ensures that partitions absent from this response are not later
+            // dropped as "older epoch" when they reappear under the new topic ID.
+            maybeClearStaleLeaderEpochsOnTopicRecreation(topicName, oldTopicId, topicId);
+
             if (metadata.error() == Errors.NONE) {
                 for (MetadataResponse.PartitionMetadata partitionMetadata : metadata.partitionMetadata()) {
                     // Even if the partition's metadata includes an error, we need to handle
@@ -549,6 +554,27 @@ public class Metadata implements Closeable {
         else
             return new MetadataSnapshot(metadataResponse.clusterId(), nodes, partitions,
                 unauthorizedTopics, invalidTopics, internalTopics, metadataResponse.controller(), topicIds);
+    }
+
+    /**
+     * When a topic is deleted and re-created, delete all last-seen leader epochs for the topic.
+     *
+     * This intentionally deletes cached epochs for all partitions of the re-created topic (not just the partitions
+     * present in the response that first reveals the new ID).
+     * Otherwise stale epochs for partitions that are absent at that moment (e.g. the topic came back with
+     * fewer partitions) are never cleared, and those partitions get silently dropped as "older epoch" if they
+     * later reappear (e.g. after a partition expansion) under the same new topic ID.
+     */
+    private void maybeClearStaleLeaderEpochsOnTopicRecreation(String topicName, Uuid oldTopicId, Uuid topicId) {
+        if (topicId == null || topicId.equals(oldTopicId))
+            return;
+        boolean clearedStaleEpochs = lastSeenLeaderEpochs.keySet().removeIf(tp -> tp.topic().equals(topicName));
+        if (clearedStaleEpochs) {
+            // Logged only when stale epochs were actually dropped (a previously-cached topic whose ID changed),
+            // not on the first sighting of a topic where oldTopicId is simply null and there is nothing to clear.
+            log.debug("Cleared stale last-seen leader epochs for topic {} after its topic ID changed from {} to {} (topic re-creation)",
+                    topicName, oldTopicId, topicId);
+        }
     }
 
     /**

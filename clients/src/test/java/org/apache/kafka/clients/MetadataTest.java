@@ -451,6 +451,70 @@ public class MetadataTest {
         assertEquals(Optional.of(20), metadata.lastSeenLeaderEpoch(tp));
     }
 
+    /**
+     * Validate that if a topic is re-created (topic ID changes), and then more partitions are added,
+     * the client is able to discover the newly added partitions and it's leaders.
+     *   1. Topic exists with 5 partitions, leader epoch 100 on P0..P4.
+     *   2. Topic deleted.
+     *   3. Topic re-created with 2 partitions (new topic id, epochs at 0).
+     *   4. Topic expanded to 5 partitions.
+     */
+    @Test
+    public void testRecreatedTopicWithAddedPartitionsNotVisibleWhileStaleEpochsRemain() {
+        String topic = "topic-1";
+        int originalPartitions = 5;
+        int recreatedPartitions = 2;   // re-created with fewer partitions
+        int expandedPartitions = 5;    // then expanded back under the same (re-created) topic id
+        int highEpoch = 100;           // leader epoch on the original topic
+        int lowEpoch = 0;              // leader epoch after re-creation
+
+        TopicPartition p0 = new TopicPartition(topic, 0);
+        TopicPartition p2 = new TopicPartition(topic, 2);
+
+        metadata.updateWithCurrentRequestVersion(emptyMetadataResponse(), false, 0L);
+
+        // (1) Original topic: 5 partitions, each with a high leader epoch.
+        Uuid originalId = Uuid.randomUuid();
+        MetadataResponse response = RequestTestUtils.metadataUpdateWithIds("dummy", 1,
+                Collections.emptyMap(), Collections.singletonMap(topic, originalPartitions),
+                _tp -> highEpoch, Collections.singletonMap(topic, originalId));
+        metadata.updateWithCurrentRequestVersion(response, false, 1L);
+        assertEquals(originalPartitions, metadata.fetch().partitionsForTopic(topic).size());
+        assertEquals(Optional.of(highEpoch), metadata.lastSeenLeaderEpoch(p2));
+
+        // (2) Topic deleted: topic-level error, no partitions returned.
+        response = RequestTestUtils.metadataUpdateWith("dummy", 1,
+                Collections.singletonMap(topic, Errors.UNKNOWN_TOPIC_OR_PARTITION), Collections.emptyMap());
+        metadata.updateWithCurrentRequestVersion(response, false, 2L);
+        assertEquals(Optional.of(highEpoch), metadata.lastSeenLeaderEpoch(p2));
+
+        // (3) Re-created with 2 partitions under a NEW topic id, epochs at 0.
+        Uuid recreatedId = Uuid.randomUuid();
+        response = RequestTestUtils.metadataUpdateWithIds("dummy", 1,
+                Collections.emptyMap(), Collections.singletonMap(topic, recreatedPartitions),
+                _tp -> lowEpoch, Collections.singletonMap(topic, recreatedId));
+        metadata.updateWithCurrentRequestVersion(response, false, 3L);
+        assertEquals(recreatedPartitions, metadata.fetch().partitionsForTopic(topic).size());
+        assertEquals(Optional.of(lowEpoch), metadata.lastSeenLeaderEpoch(p0));
+        // P2 is not part of the re-created 2-partition topic, so it shouldn't keep any known leader-epoch entry.
+        assertEquals(Optional.empty(), metadata.lastSeenLeaderEpoch(p2),
+                "Leader epochs should have been cleared for a deleted topic");
+
+        // (4) Expanded to 5 partitions under the SAME (re-created) topic id, epochs at 0.
+        response = RequestTestUtils.metadataUpdateWithIds("dummy", 1,
+                Collections.emptyMap(), Collections.singletonMap(topic, expandedPartitions),
+                _tp -> lowEpoch, Collections.singletonMap(topic, recreatedId));
+        metadata.updateWithCurrentRequestVersion(response, false, 4L);
+
+        // The client sees all 5 partitions after the expansion.
+        assertEquals(expandedPartitions, metadata.fetch().partitionsForTopic(topic).size(),
+                "Client should see all 5 partitions after the expansion");
+
+        // A leader is known for the partitions added by the expansion.
+        assertTrue(metadata.currentLeader(p2).leader.isPresent(),
+                "Leader for P2 should be known after the expansion");
+    }
+
     @Test
     public void testRejectOldMetadata() {
         Map<String, Integer> partitionCounts = new HashMap<>();
